@@ -61,7 +61,6 @@ body.panel-open{overflow:hidden}
 .scan-actions{display:flex;flex-direction:column;gap:10px;padding:0 20px;max-width:400px;margin:0 auto}
 .scan-btn{padding:16px;border-radius:var(--r);border:none;font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s;min-height:56px}
 .scan-btn:active{transform:scale(.97)}
-.scan-btn-qr{background:#fff;color:var(--text);border:2px solid var(--border)}
 .scan-btn-manual{background:transparent;color:var(--text2);font-size:14px;font-weight:500;min-height:44px}
 .scan-status{margin-top:20px;text-align:center;padding:16px;border-radius:var(--r);font-size:14px;font-weight:500}
 .scan-status.error{background:var(--red-bg);color:var(--red)}
@@ -201,7 +200,7 @@ body.panel-open{overflow:hidden}
 /* ── DASHBOARD ── */
 .dash-layout{display:grid;grid-template-columns:1fr 2fr 1fr;gap:14px;align-items:start}
 .dash-col-inner{display:flex;flex-direction:column;gap:10px}
-.dash-col-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.dash-col-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;align-items:start}
 .dcol{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;transition:all .3s;border:2px solid transparent}
 .dcol.drag-over{box-shadow:0 0 0 2px var(--mint-dark),var(--shadow-lg)}
 .dcol-hdr{padding:12px 16px;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
@@ -310,14 +309,6 @@ body.panel-open{overflow:hidden}
 .empty{text-align:center;padding:40px 20px;color:var(--text2)}
 .empty-icon{margin-bottom:12px;display:flex;justify-content:center;color:var(--warm-400)}.empty-text{font-size:15px}
 
-/* ── QR CAMERA ── */
-.qr-camera-overlay{position:fixed;inset:0;background:#000;z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center}
-.qr-camera-overlay.open{display:flex}
-.qr-camera-overlay video{width:100%;height:100%;object-fit:cover}
-.qr-viewfinder{position:absolute;width:240px;height:240px;border:3px solid var(--mint);border-radius:20px;top:50%;left:50%;transform:translate(-50%,-55%);box-shadow:0 0 0 9999px rgba(0,0,0,.5)}
-.qr-camera-close{position:absolute;top:max(16px,env(safe-area-inset-top));right:16px;width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
-.qr-camera-hint{position:absolute;bottom:max(80px,calc(env(safe-area-inset-bottom) + 60px));color:#fff;font-size:15px;font-weight:500;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.5)}
-.qr-camera-manual{position:absolute;bottom:max(32px,calc(env(safe-area-inset-bottom) + 16px));background:rgba(255,255,255,.15);color:#fff;border:none;padding:10px 20px;border-radius:20px;font-size:14px;cursor:pointer;backdrop-filter:blur(8px)}
 
 /* ── RECENT ACTIVITY ── */
 .recent-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
@@ -359,26 +350,36 @@ body.panel-open{overflow:hidden}
 .admin-tab.active{color:var(--brown);border-bottom-color:var(--mint)}
 .admin-tab-icon{margin-right:5px}
 /* Stats Dashboard */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
-.stat-card{background:var(--warm-100);border-radius:var(--rs);padding:14px;text-align:center;position:relative}
-.stat-val{font-size:28px;font-weight:800;color:var(--warm-900);line-height:1.1}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(min-width:641px){.stat-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--card);border-radius:var(--r);padding:16px;position:relative;border:1px solid var(--border);box-shadow:var(--shadow)}
+.stat-val{font-size:26px;font-weight:800;color:var(--warm-900);line-height:1.1}
 .stat-val.good{color:var(--green)}.stat-val.warn{color:var(--orange)}.stat-val.bad{color:var(--red)}
-.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-top:4px;font-weight:600}
-.stat-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.stat-label{font-size:12px;color:var(--text2);margin-top:6px;font-weight:500;line-height:1.3}
+.stat-sub{font-size:11px;color:var(--warm-500);margin-top:4px}
 .stat-trend{font-size:11px;font-weight:700;margin-top:3px}
 .stat-trend.up{color:var(--red)}.stat-trend.down{color:var(--green)}.stat-trend.flat{color:var(--text2)}
 .stat-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
-.stat-table th{text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border-bottom:2px solid var(--border);font-weight:700}
-.stat-table td{padding:6px 8px;border-bottom:1px solid var(--warm-200)}
+.stat-table th{text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;border-bottom:2px solid var(--border);font-weight:700}
+.stat-table td{padding:8px 10px;border-bottom:1px solid var(--warm-200)}
 .stat-table tr:hover td{background:var(--warm-100)}
 .stat-bar-bg{height:8px;background:var(--warm-200);border-radius:4px;flex:1;min-width:60px}
 .stat-bar{height:100%;border-radius:4px;transition:width .3s}
-.stat-section{margin-bottom:18px}
-.stat-section-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
-.stat-delta{display:inline-flex;align-items:center;gap:2px;font-size:12px;font-weight:700;padding:1px 6px;border-radius:10px}
+.stat-section{margin-bottom:20px;background:var(--card);border-radius:var(--r);padding:16px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.stat-section-title{font-size:13px;font-weight:700;color:var(--warm-900);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.stat-delta{display:inline-flex;align-items:center;gap:2px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px}
 .stat-delta.over{color:var(--red);background:var(--red-bg)}.stat-delta.under{color:var(--green);background:var(--mint-bg)}.stat-delta.neutral{color:var(--text2);background:var(--warm-100)}
-.stat-empty{text-align:center;padding:32px 16px;color:var(--text2);font-size:14px}
+.stat-empty{text-align:center;padding:40px 16px;color:var(--text2);font-size:14px}
 .stat-empty-ico{font-size:32px;margin-bottom:8px;opacity:.4}
+.stat-room-card{background:var(--warm-100);border-radius:var(--rs);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.stat-room-card:last-child{margin-bottom:0}
+.stat-room-info{flex:1;min-width:0}
+.stat-room-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.stat-room-meta{font-size:12px;color:var(--text2);margin-top:2px}
+.stat-room-vals{display:flex;gap:12px;align-items:center;flex-shrink:0}
+.stat-room-val{text-align:center}
+.stat-room-val .v{font-size:16px;font-weight:800}
+.stat-room-val .l{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
 /* Date navigation */
 .stat-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap}
 .stat-nav-range{display:flex;gap:2px;background:var(--warm-200);border-radius:var(--rs);padding:2px}
@@ -436,7 +437,7 @@ body.panel-open{overflow:hidden}
   <button class="nav-tab" data-view="admin" onclick="switchView('admin')"><span class="ico ico-sm" id="navIcoAdmin"></span> Einstellungen</button>
 </div>
 
-<!-- CHECK-IN (hidden, used for NFC/QR flow) -->
+<!-- CHECK-IN (NFC flow) -->
 <div class="view" id="v-checkin">
   <div id="checkinHome">
     <div class="scan-hero">
@@ -445,7 +446,6 @@ body.panel-open{overflow:hidden}
       <div class="scan-sub">Halte dein Handy an den NFC-Tag neben der Raum-Tür. Die Seite öffnet sich automatisch mit dem richtigen Raum.</div>
     </div>
     <div class="scan-actions">
-      <button class="scan-btn scan-btn-qr" onclick="startQR()"><span class="ico" id="btnIcoQr"></span> QR-Code scannen (Fallback)</button>
       <button class="scan-btn scan-btn-manual" onclick="showManualRoomSelect()">Raum manuell wählen</button>
     </div>
     <div class="scan-status" id="scanStatus" style="display:none"></div>
@@ -493,8 +493,6 @@ body.panel-open{overflow:hidden}
 <div class="overlay" id="overlay2" onclick="closeManualRoom()"></div>
 <div class="sheet" id="sheet2"><div class="sheet-handle"></div><div class="sheet-hdr"><div class="sheet-title">Raum manuell wählen</div><button class="sheet-close" onclick="closeManualRoom()">&times;</button></div><div class="room-grid" id="manualRoomGrid" style="padding-bottom:24px"></div></div>
 
-<!-- QR CAMERA -->
-<div class="qr-camera-overlay" id="qrOverlay"><video id="qrVideo" autoplay playsinline></video><div class="qr-viewfinder"></div><button class="qr-camera-close" onclick="stopQR()">&times;</button><div class="qr-camera-hint">QR-Code in den Rahmen halten</div><button class="qr-camera-manual" onclick="stopQR();showManualRoomSelect()">Raum manuell wählen</button></div>
 
 <!-- CUSTOM MODAL -->
 <div class="modal-overlay" id="modalOverlay">
@@ -702,7 +700,7 @@ async function loadDataFromSupabase(){
     if(rooms&&rooms.length){
       SUITE_ROOMS.length=0;STATIONS.length=0;PAUSES.length=0;
       rooms.forEach(r=>{
-        const obj={id:r.id,name:r.name,color:r.color,type:r.type,greenTime:r.green_time||15,orangeTime:r.orange_time||15,maxPatients:r.max_patients||0};
+        const obj={id:r.id,name:r.name,color:r.color,type:r.type,greenTime:r.green_time||15,orangeTime:r.orange_time||15,maxPatients:r.max_patients||0,showTime:r.show_time!==false};
         if(r.type==='suite')SUITE_ROOMS.push(obj);
         else if(r.type==='room')STATIONS.push(obj);
         else if(r.type==='pause')PAUSES.push(obj);
@@ -767,7 +765,7 @@ async function saveAllToSupabase(){
 async function saveRoomsToSupabase(){
   if(!supaClient||backendMode!=='supabase')return;
   const allRooms=[...SUITE_ROOMS.map((r,i)=>({...r,sort_order:i})),...STATIONS.map((r,i)=>({...r,sort_order:100+i})),...PAUSES.map((r,i)=>({...r,sort_order:200+i}))];
-  const roomRows=allRooms.map(r=>({id:r.id,name:r.name,type:r.type,color:r.color,green_time:r.greenTime,orange_time:r.orangeTime,max_patients:r.maxPatients||0,sort_order:r.sort_order||0}));
+  const roomRows=allRooms.map(r=>({id:r.id,name:r.name,type:r.type,color:r.color,green_time:r.greenTime,orange_time:r.orangeTime,max_patients:r.maxPatients||0,sort_order:r.sort_order||0,show_time:r.showTime!==false}));
   // Get existing room IDs from Supabase
   const{data:existing}=await supaClient.from('rooms').select('id');
   const localIds=new Set(roomRows.map(r=>r.id));
@@ -933,7 +931,7 @@ function startConfigPolling(){
         if(newRoomIds!==curRoomIds||newRoomHash!==curRoomHash){
           SUITE_ROOMS.length=0;STATIONS.length=0;PAUSES.length=0;
           rooms.forEach(r=>{
-            const obj={id:r.id,name:r.name,color:r.color,type:r.type,greenTime:r.green_time||15,orangeTime:r.orange_time||15,maxPatients:r.max_patients||0};
+            const obj={id:r.id,name:r.name,color:r.color,type:r.type,greenTime:r.green_time||15,orangeTime:r.orange_time||15,maxPatients:r.max_patients||0,showTime:r.show_time!==false};
             if(r.type==='suite')SUITE_ROOMS.push(obj);
             else if(r.type==='room')STATIONS.push(obj);
             else if(r.type==='pause')PAUSES.push(obj);
@@ -1079,13 +1077,6 @@ async function scanSwap(oldPid,newPid){if(!detectedRoomId)return;const defaultPa
 function scanPickRoom(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const targets=[...STATIONS.filter(s=>s.id!==detectedRoomId),...PAUSES];const g=document.getElementById('manualRoomGrid');g.innerHTML=targets.map(l=>{const c=patients.filter(x=>x.currentLocation===l.id).length;const maxP=l.maxPatients||0;const full=maxP&&c>=maxP;return`<button class="room-btn${full?' already-here':''}" onclick="closeManualRoom();scanMoveOccupant('${pid}','${l.id}')"><span class="ri">${roomIco(l.id)}</span><span class="rn">${l.name}</span><span class="rc">${c}${maxP?'/'+maxP:''} Pat.</span></button>`}).join('');document.getElementById('overlay2').classList.add('open');document.getElementById('sheet2').classList.add('open');document.body.classList.add('panel-open')}
 function cancelScan(){resetScanView()}
 
-// ═══════════════════════════════════════
-// QR
-// ═══════════════════════════════════════
-let qrStream=null,qrScanning=false;
-async function startQR(){const ov=document.getElementById('qrOverlay'),vid=document.getElementById('qrVideo'),st=document.getElementById('scanStatus');st.style.display='none';try{qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});vid.srcObject=qrStream;ov.classList.add('open');qrScanning=true;if('BarcodeDetector'in window){const d=new BarcodeDetector({formats:['qr_code']});const scan=async()=>{if(!qrScanning)return;try{const b=await d.detect(vid);if(b.length>0){handleQRValue(b[0].rawValue);return}}catch(e){}requestAnimationFrame(scan)};vid.onloadeddata=()=>requestAnimationFrame(scan)}else{st.style.display='';st.className='scan-status error';st.innerHTML='Dein Browser unterstützt keinen QR-Scanner.';stopQR()}}catch(e){st.style.display='';st.className='scan-status error';st.textContent=e.name==='NotAllowedError'?'Kamera-Zugriff verweigert.':'Kamera konnte nicht geöffnet werden.'}}
-function handleQRValue(v){stopQR();if(navigator.vibrate)navigator.vibrate(100);const m=v.match(/years-room:(.+)/);if(m){const r=m[1].trim(),l=ALL_LOCS.find(x=>x.id===r);if(l)roomDetected(r);else{const s=document.getElementById('scanStatus');s.style.display='';s.className='scan-status error';s.textContent='Unbekannter Raum: "'+r+'"'}}else{const s=document.getElementById('scanStatus');s.style.display='';s.className='scan-status error';s.textContent='Ungültiger QR-Code.'}}
-function stopQR(){qrScanning=false;if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null}document.getElementById('qrOverlay').classList.remove('open')}
 
 // ═══════════════════════════════════════
 // ACTIVITY
@@ -1273,16 +1264,18 @@ if(!data){h+=`<div class="stat-empty"><div class="stat-empty-ico">${ico('barChar
 else{
 const isMulti=data.days&&data.days>1;
 const avgDelay=data.avgDelay;const avgTotal=data.avgTotal;const avgPause=data.avgPause;const txPct=data.txPct;
-h+=`<div class="stat-section"><div class="stat-section-title">${isMulti?'Ø Übersicht ('+data.days+' Tage)':'Übersicht'}</div><div class="stat-grid">`;
+h+=`<div class="stat-grid">`;
 h+=`<div class="stat-card"><div class="stat-val">${data.patTotal}</div><div class="stat-label">Patienten${isMulti?' Ø/Tag':' gesamt'}</div></div>`;
 h+=`<div class="stat-card"><div class="stat-val good">${data.patFinished}</div><div class="stat-label">Abgeschlossen</div></div>`;
 h+=`<div class="stat-card"><div class="stat-val">${data.patChecked-data.patFinished}</div><div class="stat-label">In Behandlung</div></div>`;
 h+=`<div class="stat-card"><div class="stat-val${data.patNotArr?' warn':''}">${data.patNotArr}</div><div class="stat-label">Nicht erschienen</div></div>`;
+h+=`</div>`;
+h+=`<div class="stat-grid">`;
 h+=`<div class="stat-card"><div class="stat-val${avgDelay>10?' bad':avgDelay>5?' warn':' good'}">${fmDelta(avgDelay)}</div><div class="stat-label">Ø Verspätung</div><div class="stat-sub">${data.lateCount} von ${data.delayCount} verspätet</div></div>`;
-h+=`<div class="stat-card"><div class="stat-val">${fm(avgTotal)}</div><div class="stat-label">Ø Durchlaufzeit</div></div>`;
-h+=`<div class="stat-card"><div class="stat-val${avgPause>30*6e4?' warn':''}">${fm(avgPause)}</div><div class="stat-label">Ø Wartezeit</div></div>`;
+h+=`<div class="stat-card"><div class="stat-val">${fm(avgTotal)}</div><div class="stat-label">Ø Gesamtdauer</div><div class="stat-sub">Check-in bis Abschluss</div></div>`;
+h+=`<div class="stat-card"><div class="stat-val${avgPause>30*6e4?' warn':''}">${fm(avgPause)}</div><div class="stat-label">Ø Wartezeit</div><div class="stat-sub">Zeit in Pausenräumen</div></div>`;
 h+=`<div class="stat-card"><div class="stat-val${txPct>=80?' good':txPct>=50?' warn':' bad'}">${txPct}%</div><div class="stat-label">Behandlungsquote</div><div class="stat-sub">${isMulti?'Ø '+data.txDone+' erledigt/Tag':data.txDone+' erledigt · '+data.txSkip+' übersprungen'}</div></div>`;
-h+=`</div></div>`;
+h+=`</div>`;
 if(isMulti&&snaps.length>1){h+=`<div class="stat-section"><div class="stat-section-title">Tagesverlauf</div><div style="overflow-x:auto"><table class="stat-table"><thead><tr><th>Datum</th><th>Pat.</th><th>Abgeschl.</th><th>Ø Versp.</th><th>Ø Durchlauf</th><th>Ø Wartezeit</th><th>Beh.quote</th></tr></thead><tbody>`;
 snaps.sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{const dd=new Date(s.date+'T12:00');h+=`<tr><td><strong>${dd.getDate()}.${dd.getMonth()+1}.</strong></td><td>${s.patTotal}</td><td>${s.patFinished}</td><td><span class="stat-delta ${s.avgDelay>10?'over':s.avgDelay>5?'over':'neutral'}">${fmDelta(s.avgDelay)}</span></td><td>${fm(s.avgTotal)}</td><td>${fm(s.avgPause)}</td><td><span style="font-weight:700;color:${s.txPct>=80?'var(--green)':s.txPct>=50?'var(--orange)':'var(--red)'}">${s.txPct}%</span></td></tr>`});
 h+=`</tbody></table></div></div>`}
@@ -1291,12 +1284,12 @@ if(delays.length){h+=`<div class="stat-section"><div class="stat-section-title">
 delays.sort((a,b)=>b.diff-a.diff).forEach(d=>{const cls=d.diff>10?'over':d.diff>5?'over':d.diff<-2?'under':'neutral';const istH=Math.floor(d.ist/60),istM=d.ist%60;const actStr=String(istH).padStart(2,'0')+':'+String(Math.round(istM)).padStart(2,'0');h+=`<tr><td><strong>${d.name}</strong></td><td>${d.soll}</td><td>${actStr}</td><td><span class="stat-delta ${cls}">${d.diff>0?'↑':'↓'} ${fmDelta(d.diff)}</span></td></tr>`});
 h+=`</tbody></table></div></div>`}
 const roomTimes=data.roomTimes||{};
-h+=`<div class="stat-section"><div class="stat-section-title">Raumperformance</div><div style="overflow-x:auto"><table class="stat-table"><thead><tr><th>Raum</th><th>Ø Dauer</th><th>Max</th><th>Soll</th><th>Abweichung Ø</th><th>Auslastung</th></tr></thead><tbody>`;
-STATIONS.forEach(l=>{const rt=roomTimes[l.id];if(!rt||!rt.visits)return;const avg=rt.visits?rt.total/rt.visits:0;const avgMin=avg/6e4;const sollMin=l.orangeTime||0;const delta=sollMin?avgMin-sollMin:0;const deltaCls=delta>5?'over':delta>0?'over':delta<-2?'under':'neutral';const pct=rt.visits?Math.min(100,Math.round(rt.visits/Math.max(data.patChecked,1)*100)):0;h+=`<tr><td style="display:flex;align-items:center;gap:6px">${roomIco(l.id,'ico-sm')} <strong>${l.name}</strong></td><td>${fm(avg)}</td><td>${fm(rt.maxStay)}</td><td>${sollMin?sollMin+' min':'—'}</td><td>${sollMin?`<span class="stat-delta ${deltaCls}">${fmDelta(delta)}</span>`:'—'}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="stat-bar-bg"><div class="stat-bar" style="width:${pct}%;background:${pct>80?'var(--red)':pct>50?'var(--orange)':'var(--green)'}"></div></div><span style="font-size:12px;font-weight:600">${pct}%</span></div></td></tr>`});
-h+=`</tbody></table></div></div>`;
-h+=`<div class="stat-section"><div class="stat-section-title">Wartezeiten pro Pausenraum</div><div style="overflow-x:auto"><table class="stat-table"><thead><tr><th>Raum</th><th>Ø Dauer</th><th>Max</th><th>Soll</th><th>Abweichung Ø</th><th>Besuche</th></tr></thead><tbody>`;
-PAUSES.forEach(l=>{const rt=roomTimes[l.id];if(!rt||!rt.visits)return;const avg=rt.visits?rt.total/rt.visits:0;const avgMin=avg/6e4;const sollMin=l.orangeTime||0;const delta=sollMin?avgMin-sollMin:0;const deltaCls=delta>5?'over':delta>0?'over':delta<-2?'under':'neutral';h+=`<tr><td style="display:flex;align-items:center;gap:6px">${roomIco(l.id,'ico-sm')} <strong>${l.name}</strong></td><td>${fm(avg)}</td><td>${fm(rt.maxStay)}</td><td>${sollMin?sollMin+' min':'—'}</td><td>${sollMin?`<span class="stat-delta ${deltaCls}">${fmDelta(delta)}</span>`:'—'}</td><td>${rt.visits}</td></tr>`});
-h+=`</tbody></table></div></div>`;
+h+=`<div class="stat-section"><div class="stat-section-title">${ico('building','ico-sm')} Räume — Dauer & Besuche</div>`;
+STATIONS.forEach(l=>{const rt=roomTimes[l.id];if(!rt||!rt.visits)return;const avg=rt.visits?rt.total/rt.visits:0;const avgMin=avg/6e4;const sollMin=l.orangeTime||0;const delta=sollMin?avgMin-sollMin:0;const deltaCls=delta>5?'over':delta>0?'over':delta<-2?'under':'neutral';const pct=rt.visits?Math.min(100,Math.round(rt.visits/Math.max(data.patChecked,1)*100)):0;h+=`<div class="stat-room-card"><div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">${roomIco(l.id,'ico-sm')}<div class="stat-room-info"><div class="stat-room-name">${l.name}</div><div class="stat-room-meta">${rt.visits} Besuche · max ${fm(rt.maxStay)}${sollMin?` · Soll ${sollMin} min`:''}</div></div></div><div class="stat-room-vals"><div class="stat-room-val"><div class="v">${fm(avg)}</div><div class="l">Ø Dauer</div></div>${sollMin?`<div class="stat-room-val"><div class="v"><span class="stat-delta ${deltaCls}">${fmDelta(delta)}</span></div><div class="l">vs. Soll</div></div>`:''}<div class="stat-room-val"><div style="display:flex;align-items:center;gap:4px"><div class="stat-bar-bg" style="width:50px"><div class="stat-bar" style="width:${pct}%;background:${pct>80?'var(--red)':pct>50?'var(--orange)':'var(--green)'}"></div></div><span style="font-size:13px;font-weight:700">${pct}%</span></div><div class="l">Besucht</div></div></div></div>`});
+h+=`</div>`;
+h+=`<div class="stat-section"><div class="stat-section-title">${ico('armchair','ico-sm')} Wartezeiten pro Pausenraum</div>`;
+PAUSES.forEach(l=>{const rt=roomTimes[l.id];if(!rt||!rt.visits)return;const avg=rt.visits?rt.total/rt.visits:0;const avgMin=avg/6e4;const sollMin=l.orangeTime||0;const delta=sollMin?avgMin-sollMin:0;const deltaCls=delta>5?'over':delta>0?'over':delta<-2?'under':'neutral';h+=`<div class="stat-room-card"><div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">${roomIco(l.id,'ico-sm')}<div class="stat-room-info"><div class="stat-room-name">${l.name}</div><div class="stat-room-meta">${rt.visits} Besuche · max ${fm(rt.maxStay)}${sollMin?` · Soll ${sollMin} min`:''}</div></div></div><div class="stat-room-vals"><div class="stat-room-val"><div class="v">${fm(avg)}</div><div class="l">Ø Dauer</div></div>${sollMin?`<div class="stat-room-val"><div class="v"><span class="stat-delta ${deltaCls}">${fmDelta(delta)}</span></div><div class="l">vs. Soll</div></div>`:''}</div></div>`});
+h+=`</div>`;
 const patDet=data.patDetails||[];
 if(patDet.length){h+=`<div class="stat-section"><div class="stat-section-title">Patientenübersicht</div><div style="overflow-x:auto"><table class="stat-table"><thead><tr><th>Patient</th><th>Programm</th><th>Durchlaufzeit</th><th>Wartezeit</th><th>Fortschritt</th><th>Status</th></tr></thead><tbody>`;
 patDet.sort((a,b)=>b.total-a.total).forEach(p=>{h+=`<tr><td><strong>${p.name}</strong><br><span style="font-size:11px;color:var(--text2)">#${p.pid}</span></td><td>${p.program}</td><td>${fm(p.total)}</td><td>${fm(p.pause)}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="stat-bar-bg"><div class="stat-bar" style="width:${p.progress}%;background:var(--green)"></div></div><span style="font-size:12px;font-weight:600">${p.progress}%</span></div></td><td><span style="font-size:12px">${p.loc}</span></td></tr>`});
@@ -1306,7 +1299,7 @@ h+=`</tbody></table></div></div>`}
 // === TAB: RÄUME ===
 if(adminActiveTab==='rooms'){
 const typeLabel={suite:'Suite',room:'Behandlung',pause:'Pause'};
-const renderLocSection=(locs)=>{return locs.map(l=>{const hasColor=l.greenTime>0||l.orangeTime>0;const redVal=l.orangeTime?Math.round(l.orangeTime*1.2):0;return`<div class="admin-card" data-room-id="${l.id}" draggable="true" ondragstart="roomDragStart(event,'${l.id}')" ondragend="roomDragEnd(event)" ondragover="roomDragOver(event)" ondragleave="roomDragLeave(event)" ondrop="roomDrop(event,'${l.id}')" ontouchstart="roomTouchStart(event,'${l.id}')" ontouchmove="roomTouchMove(event)" ontouchend="roomTouchEnd(event)" style="flex-direction:column;align-items:stretch;gap:8px;cursor:grab"><div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><span style="cursor:grab;color:var(--text2)">${ico('grip','ico-sm')}</span><span class="admin-card-icon">${roomIco(l.id)}</span><div><div class="admin-card-name">${l.name}</div><div class="admin-card-id">${l.id} · ${typeLabel[l.type]||l.type}</div></div></div><div style="display:flex;gap:4px"><button class="admin-btn" onclick="renameRoom('${l.id}')" style="padding:4px 8px;font-size:12px">Umbenennen</button><button class="admin-btn" onclick="changeRoomType('${l.id}')" style="padding:4px 8px;font-size:12px">Typ</button><button class="admin-btn danger" onclick="removeRoom('${l.id}')" style="padding:4px 8px">${ico('x','ico-sm')}</button></div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><label style="font-size:12px;color:var(--green);white-space:nowrap;font-weight:600">🟢 bis</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.greenTime||0}" onchange="updateLocTime('${l.id}','greenTime',+this.value)" min="0"><label style="font-size:12px;color:var(--orange);white-space:nowrap;font-weight:600">🟠 bis</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.orangeTime||0}" onchange="updateLocTime('${l.id}','orangeTime',+this.value)" min="0"><span style="font-size:12px;color:var(--red);font-weight:600">🔴 ab ${redVal}</span><span style="font-size:11px;color:var(--text2)">min</span>${hasColor?`<button class="admin-btn" onclick="clearLocColor('${l.id}')" style="padding:2px 8px;font-size:11px">Farbcodierung löschen</button>`:''}<button class="admin-btn" onclick="toggleLocTime('${l.id}')" style="padding:2px 8px;font-size:11px;margin-left:auto">${l.showTime!==false?'⏱ Zeitanzeige aus':'⏱ Zeitanzeige an'}</button></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px;padding-top:6px;border-top:1px solid var(--warm-200)"><label style="font-size:12px;color:var(--warm-700);white-space:nowrap;font-weight:600">👥 Max. Patienten</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.maxPatients||0}" onchange="updateLocMax('${l.id}',+this.value)" min="0" placeholder="0"><span style="font-size:11px;color:var(--text2)">${l.maxPatients===1?'Raum wird gesperrt wenn belegt':'0 = unbegrenzt'}</span></div></div>`}).join('')};
+const renderLocSection=(locs)=>{return locs.map(l=>{const hasColor=l.greenTime>0||l.orangeTime>0;const redVal=l.orangeTime?Math.round(l.orangeTime*1.2):0;return`<div class="admin-card" data-room-id="${l.id}" draggable="true" ondragstart="roomDragStart(event,'${l.id}')" ondragend="roomDragEnd(event)" ondragover="roomDragOver(event)" ondragleave="roomDragLeave(event)" ondrop="roomDrop(event,'${l.id}')" ontouchstart="roomTouchStart(event,'${l.id}')" ontouchmove="roomTouchMove(event)" ontouchend="roomTouchEnd(event)" style="flex-direction:column;align-items:stretch;gap:8px;cursor:grab"><div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><span style="cursor:grab;color:var(--text2)">${ico('grip','ico-sm')}</span><span class="admin-card-icon">${roomIco(l.id)}</span><div><div class="admin-card-name">${l.name}</div><div class="admin-card-id">${l.id} · ${typeLabel[l.type]||l.type}</div></div></div><div style="display:flex;gap:4px"><button class="admin-btn" onclick="renameRoom('${l.id}')" style="padding:4px 8px;font-size:12px">Umbenennen</button><button class="admin-btn" onclick="changeRoomType('${l.id}')" style="padding:4px 8px;font-size:12px">Typ</button><button class="admin-btn danger" onclick="removeRoom('${l.id}')" style="padding:4px 8px">${ico('x','ico-sm')}</button></div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><label style="font-size:12px;color:var(--green);white-space:nowrap;font-weight:600">🟢 bis</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.greenTime||0}" onchange="updateLocTime('${l.id}','greenTime',+this.value)" min="0"><label style="font-size:12px;color:var(--orange);white-space:nowrap;font-weight:600">🟠 bis</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.orangeTime||0}" onchange="updateLocTime('${l.id}','orangeTime',+this.value)" min="0"><span style="font-size:12px;color:var(--red);font-weight:600">🔴 ab ${redVal}</span><span style="font-size:11px;color:var(--text2)">min</span>${hasColor?`<button class="admin-btn" onclick="clearLocColor('${l.id}')" style="padding:2px 8px;font-size:11px">Farbcodierung löschen</button>`:''}<button class="admin-btn" onclick="toggleLocTime('${l.id}')" style="padding:4px 10px;font-size:11px;margin-left:auto;border-radius:12px;font-weight:600;${l.showTime!==false?'background:var(--green-bg);color:var(--green);border-color:var(--green)':'background:var(--warm-200);color:var(--warm-600);border-color:var(--warm-300)'}">${l.showTime!==false?'⏱ Zeit AN':'⏱ Zeit AUS'}</button></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px;padding-top:6px;border-top:1px solid var(--warm-200)"><label style="font-size:12px;color:var(--warm-700);white-space:nowrap;font-weight:600">👥 Max. Patienten</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.maxPatients||0}" onchange="updateLocMax('${l.id}',+this.value)" min="0" placeholder="0"><span style="font-size:11px;color:var(--text2)">${l.maxPatients===1?'Raum wird gesperrt wenn belegt':'0 = unbegrenzt'}</span></div></div>`}).join('')};
 h+=`<p class="admin-hint">Zeitlimits bestimmen die Farbcodierung: Grün → Orange → Rot (120% von Orange). Max. Patienten: bei 1 wird der Raum gesperrt, bei >1 erscheint eine Warnung. 0 = unbegrenzt. Räume per Drag & Drop sortieren.</p>`;
 h+=`<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin:8px 0 4px">Suiten</div>${renderLocSection(SUITE_ROOMS)}`;
 h+=`<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin:12px 0 4px">Behandlungsräume</div>${renderLocSection(STATIONS)}`;
@@ -1332,8 +1325,6 @@ h+=`<div style="font-size:14px;font-weight:700;margin:20px 0 12px;padding-top:16
 h+=`<div class="invite-form"><div style="font-weight:600;font-size:14px;margin-bottom:10px">${ico('userPlus','ico-sm')} Neues Mitglied</div><div class="invite-form-row"><input class="admin-input" id="invName" placeholder="Name" style="flex:1;margin-bottom:0"><input class="admin-input" id="invEmail" placeholder="E-Mail" style="flex:1;margin-bottom:0"></div><div class="invite-form-row"><select class="admin-input" id="invRole" style="flex:1;margin-bottom:0"><option value="mfa">MFA</option><option value="arzt">Arzt / Ärztin</option><option value="admin">Admin</option></select><button class="admin-btn primary" onclick="inviteTeamMember()" style="white-space:nowrap;padding:10px 18px">Einladen</button></div></div>${teamMembers.map(m=>{const init=m.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);return`<div class="member-card"><div class="member-info"><div class="member-avatar" style="background:${roleColors[m.role]};color:${roleText[m.role]}">${init}</div><div><div class="member-name">${m.name}</div><div class="member-email">${m.email}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span class="role-badge ${roleClasses[m.role]}">${roleLabels[m.role]}</span>${m.id!=='t1'?`<button class="admin-btn danger" onclick="removeTeamMember('${m.id}')" style="padding:4px 8px">${ico('x','ico-sm')}</button>`:''}</div></div>`}).join('')}`;
 h+=`<div style="font-size:14px;font-weight:700;margin:20px 0 12px;padding-top:16px;border-top:2px solid var(--border)">${ico('wifi','ico-sm')} NFC-Tags</div>`;
 h+=`<p class="admin-hint">Schreibe folgende URLs auf deine NFC-Tags (z.B. mit der App "NFC Tools").</p><div style="background:var(--warm-100);border-radius:var(--rs);padding:14px;margin-bottom:10px"><div style="font-weight:600;font-size:13px;margin-bottom:8px">Anleitung:</div><div class="nfc-step"><div class="nfc-step-num">1</div><div class="nfc-step-text">Lade <strong>"NFC Tools"</strong> (kostenlos) herunter.</div></div><div class="nfc-step"><div class="nfc-step-num">2</div><div class="nfc-step-text">Schreiben → Datensatz → URL/URI.</div></div><div class="nfc-step"><div class="nfc-step-num">3</div><div class="nfc-step-text">URL eingeben und auf Tag schreiben.</div></div><div class="nfc-step"><div class="nfc-step-num">4</div><div class="nfc-step-text">Tag neben die Tür kleben. Fertig!</div></div></div><div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">URLs pro Raum:</div>${ALL_LOCS.map(l=>`<div class="admin-card" style="flex-direction:column;align-items:stretch;gap:4px"><div style="display:flex;align-items:center;gap:8px"><span class="admin-card-icon">${roomIco(l.id)}</span><span class="admin-card-name">${l.name}</span></div><div class="nfc-url-box">${baseUrl}?room=${l.id}</div></div>`).join('')}`;
-h+=`<div style="font-size:14px;font-weight:700;margin:20px 0 12px;padding-top:16px;border-top:2px solid var(--border)">${ico('qrcode','ico-sm')} QR-Codes</div>`;
-h+=`<p class="admin-hint">Druckbare QR-Codes für jeden Raum.</p>${ALL_LOCS.map(l=>`<div class="admin-card"><div class="admin-card-info"><span class="admin-card-icon">${roomIco(l.id)}</span><div><div class="admin-card-name">${l.name}</div><div class="admin-card-id">years-room:${l.id}</div></div></div><button class="admin-btn" onclick="generateQR('${l.id}')">QR anzeigen</button></div>`).join('')}`;
 }
 // === TAB: DATEN ===
 if(adminActiveTab==='data'){
@@ -1504,7 +1495,7 @@ async function pushLocalToSupabase(){
   try{
     // Push rooms
     const allRooms=[...SUITE_ROOMS.map((r,i)=>({...r,sort_order:i})),...STATIONS.map((r,i)=>({...r,sort_order:100+i})),...PAUSES.map((r,i)=>({...r,sort_order:200+i}))];
-    const roomRows=allRooms.map(r=>({id:r.id,name:r.name,type:r.type,color:r.color,green_time:r.greenTime,orange_time:r.orangeTime,max_patients:r.maxPatients||0,sort_order:r.sort_order||0}));
+    const roomRows=allRooms.map(r=>({id:r.id,name:r.name,type:r.type,color:r.color,green_time:r.greenTime,orange_time:r.orangeTime,max_patients:r.maxPatients||0,sort_order:r.sort_order||0,show_time:r.showTime!==false}));
     await supaClient.from('rooms').upsert(roomRows,{onConflict:'id'});
     // Push treatments
     const txRows=treatments.map(t=>({id:t.id,name:t.name,room_id:t.room,sort_order:t.order}));
@@ -1521,7 +1512,6 @@ async function pullFromSupabase(){
   if(ok){saveData();renderAll();toast('Daten von Supabase geladen!')}
   else toast('Laden fehlgeschlagen')
 }
-function generateQR(rid){const l=ALL_LOCS.find(x=>x.id===rid);const v='years-room:'+rid;const q=`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(v)}`;const w=window.open('','_blank','width=500,height=600');w.document.write(`<html><head><title>QR: ${l.name}</title><style>body{font-family:system-ui;text-align:center;padding:40px}h1{font-size:24px;margin-bottom:4px}p{color:#666;margin-bottom:24px}img{border:8px solid #000;border-radius:8px}.logo{font-size:20px;font-weight:800;letter-spacing:4px;color:#271D18;margin-bottom:4px}.logo span{color:#85FFC3}.pb{margin-top:24px;padding:12px 32px;font-size:16px;border:none;background:#271D18;color:#85FFC3;border-radius:8px;cursor:pointer}@media print{.pb{display:none}}</style></head><body><div class="logo"><span>YEARS</span> tracking</div><h1>${l.name}</h1><p>${v}</p><img src="${q}" width="300" height="300"><br><button class="pb" onclick="window.print()">Drucken</button></body></html>`)}
 async function adminAddRoom(){const r=await showModal('Neuer Raum','<input class="admin-input" id="modalRoomName" placeholder="Raumname (z.B. Suite 7, Labor, etc.)" style="margin-top:4px">',[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Weiter',cls:'modal-btn-confirm',val:'_input'}]);if(!r||r==='no')return;const name=r;const r2=await showModal('Raumtyp',`<p>Welcher Typ ist <strong>"${name}"</strong>?</p>`,[{label:'Suite',cls:'modal-btn-confirm',val:'suite'},{label:'Behandlungsraum',cls:'modal-btn-confirm',val:'room'},{label:'Pause / Wartebereich',cls:'modal-btn-cancel',val:'pause'}]);const type=r2||'room';const id=name.toLowerCase().replace(/[^a-z0-9äöüß]/g,'-').replace(/-+/g,'-');const loc={id,name,color:type==='suite'?'blue':type==='room'?'gray':'gray',type,greenTime:15,orangeTime:15,maxPatients:type==='room'?1:0};if(type==='suite')SUITE_ROOMS.push(loc);else if(type==='room')STATIONS.push(loc);else PAUSES.push(loc);ALL_LOCS.push(loc);saveData();renderAdmin();renderDashboard();toast(`"${name}" hinzugefügt`)}
 async function renameRoom(locId){const l=ALL_LOCS.find(x=>x.id===locId);if(!l)return;const r=await showModal('Raum umbenennen',`<p>Aktueller Name: <strong>${l.name}</strong></p><input class="admin-input" id="modalRoomName" placeholder="Neuer Name" value="${l.name}" style="margin-top:8px">`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Speichern',cls:'modal-btn-confirm',val:'_input'}]);if(!r||r==='no')return;l.name=r;saveData();renderAdmin();renderDashboard();toast(`Umbenannt zu "${r}"`)}
 async function changeRoomType(locId){const l=ALL_LOCS.find(x=>x.id===locId);if(!l)return;const r=await showModal('Raumtyp ändern',`<p><strong>${l.name}</strong> ist aktuell: ${typeLabel[l.type]||l.type}</p>`,[{label:'Suite',cls:'modal-btn-confirm',val:'suite'},{label:'Behandlungsraum',cls:'modal-btn-confirm',val:'room'},{label:'Pause',cls:'modal-btn-cancel',val:'pause'}]);if(!r)return;const oldType=l.type;l.type=r;const removeFrom=arr=>{const i=arr.findIndex(x=>x.id===locId);if(i>=0)arr.splice(i,1)};removeFrom(SUITE_ROOMS);removeFrom(STATIONS);removeFrom(PAUSES);if(r==='suite')SUITE_ROOMS.push(l);else if(r==='room')STATIONS.push(l);else PAUSES.push(l);saveData();renderAdmin();renderDashboard();toast(`${l.name} → ${typeLabel[r]}`)}
@@ -1599,7 +1589,7 @@ async function resetAllData(){const r=await showModal('Daten zurücksetzen?','<p
 function renderAll(){updateHeader();renderFilters();renderDashboard();if(currentView==='patients')renderPatients();if(currentView==='checkin'&&detectedRoomId)renderScanPatients();if(currentView==='checkin')renderActivity()}
 setInterval(renderAll,10000);
 
-function injectIcons(){const s=(id,n)=>{const el=document.getElementById(id);if(el)el.innerHTML=ICO[n]||''};s('hdrIcoCheckin','smartphone');s('hdrIcoAdmin','settings');s('navIcoCheckin','smartphone');s('navIcoPatients','list');s('navIcoDash','grid');s('navIcoAdmin','settings');s('heroIcoNfc','smartphone');s('btnIcoQr','camera');s('scanSearchIco','search');s('patSearchIco','search')}
+function injectIcons(){const s=(id,n)=>{const el=document.getElementById(id);if(el)el.innerHTML=ICO[n]||''};s('hdrIcoCheckin','smartphone');s('hdrIcoAdmin','settings');s('navIcoCheckin','smartphone');s('navIcoPatients','list');s('navIcoDash','grid');s('navIcoAdmin','settings');s('heroIcoNfc','smartphone');s('scanSearchIco','search');s('patSearchIco','search')}
 
 // ═══════════════════════════════════════
 // INIT
