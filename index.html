@@ -22,7 +22,7 @@
   --r: 10px; --rs: 6px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top);overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;-webkit-font-smoothing:antialiased;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 body.panel-open{overflow:hidden}
 
 /* ── SVG ICON ── */
@@ -31,7 +31,7 @@ body.panel-open{overflow:hidden}
 .ico-sm{width:16px;height:16px}.ico-lg{width:24px;height:24px}.ico-xl{width:32px;height:32px}.ico-hero{width:56px;height:56px}.ico-room{width:22px;height:22px}
 
 /* ── HEADER ── */
-.header{background:var(--warm-900);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header{background:var(--warm-900);padding:max(10px,env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header-left{display:flex;align-items:center;gap:10px}
 .logo-svg{height:20px;display:flex;align-items:center}
 .logo-svg svg{height:20px;width:auto}
@@ -114,7 +114,7 @@ body.panel-open{overflow:hidden}
 
 /* ── SEARCH ── */
 .search{position:relative;margin-bottom:12px}
-.search input{width:100%;padding:10px 16px 10px 40px;border:1px solid var(--border);border-radius:var(--r);font-size:15px;background:#fff;outline:none;transition:border-color .15s}
+.search input{width:100%;padding:10px 16px 10px 40px;border:1px solid var(--border);border-radius:var(--r);font-size:16px;background:#fff;outline:none;transition:border-color .15s}
 .search input:focus{border-color:var(--warm-900)}
 .search .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2)}
 
@@ -171,7 +171,7 @@ body.panel-open{overflow:hidden}
 /* ── BOTTOM SHEET ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:150;opacity:0;pointer-events:none;transition:opacity .2s}
 .overlay.open{opacity:1;pointer-events:all}
-.sheet{position:fixed;top:0;right:0;bottom:0;width:620px;max-width:100vw;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.15);z-index:200;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);overflow-y:auto;overscroll-behavior:contain;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:620px;max-width:100vw;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.15);z-index:200;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:max(24px,env(safe-area-inset-bottom))}
 .sheet.open{transform:translateX(0)}
 .sheet-handle{display:none}
 .sheet-hdr{padding:20px 20px 8px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
@@ -262,6 +262,13 @@ body.panel-open{overflow:hidden}
 .admin-input{padding:10px 14px;border:1px solid var(--border);border-radius:var(--rs);font-size:14px;width:100%;outline:none;margin-bottom:8px;background:#fff}
 .admin-input:focus{border-color:var(--warm-900)}
 .admin-hint{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.4}
+/* ── ROOM CARD (admin) ── */
+.room-card-hdr{display:flex;align-items:center;justify-content:space-between;gap:6px;padding-bottom:8px}
+.room-card-times{padding:8px 0;border-top:1px solid var(--warm-200)}
+.room-time-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.room-time-row label{font-size:12px;font-weight:600;white-space:nowrap}
+.room-time-actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.room-card-max{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--warm-200)}
 
 /* ── NFC URL ── */
 .nfc-url-box{background:var(--warm-200);border-radius:var(--rs);padding:10px 14px;margin:6px 0;font-family:monospace;font-size:13px;word-break:break-all;color:var(--warm-800)}
@@ -325,23 +332,101 @@ body.panel-open{overflow:hidden}
 /* Touch & drag helpers */
 .dchip{touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .admin-card[data-room-id]{touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-/* iPad landscape */
+/* ── iPad (landscape + portrait) ── */
 @media(min-width:641px) and (max-width:1024px){
   .dash-layout{grid-template-columns:1fr 1fr;gap:12px}
   .dash-col-grid{grid-template-columns:repeat(2,1fr)}
-  .view{padding:12px}
+  .view{padding:12px 16px}
+  .sheet{width:min(520px,85vw)}
+  .stat-room-card{flex-wrap:wrap;gap:8px}
+  .stat-room-vals{width:100%;justify-content:space-around;padding-top:8px;border-top:1px solid var(--warm-200)}
+  .modal{max-width:420px}
 }
+/* ── iPhone / small mobile ── */
 @media(max-width:640px){
-  .header{padding:8px 12px}
-  .room-grid{grid-template-columns:repeat(3,1fr);gap:8px}
-  .room-btn{padding:14px 8px;min-height:70px}.room-btn .rn{font-size:12px}
+  /* Header & Nav */
+  .header{padding:8px 12px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  .nav{padding:0 12px;gap:0}
+  .nav-tab{padding:10px 12px;font-size:12px;min-height:44px}
+  .hdr-btn{width:40px;height:40px}
+  /* Views */
+  .view{padding:10px 12px;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+  /* Check-in */
+  .scan-hero{padding:20px 12px 16px}
+  .scan-title{font-size:18px}
+  .scan-sub{font-size:13px}
+  .scan-btn{min-height:50px;font-size:15px;padding:14px}
+  /* Room grid */
+  .room-grid{grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 12px}
+  .room-btn{padding:14px 6px;min-height:70px}.room-btn .rn{font-size:12px}
+  /* Dashboard */
   .dash-layout{grid-template-columns:1fr}
   .dash-col-grid{grid-template-columns:1fr}
-  .dchip{padding:10px 12px;min-height:52px}
-  .dchip-btn{width:34px;height:34px}
-  .scan-hero{padding:24px 16px 16px}
-  .sheet{width:100vw}
-  .admin-card{flex-wrap:wrap}
+  .dash-section-title{padding:6px 0 4px;font-size:11px}
+  .dcol-hdr{padding:10px 12px;font-size:13px}
+  .dcol-body{padding:6px}
+  .dchip{padding:10px 12px;min-height:52px;border-radius:var(--r)}
+  .dchip-name{font-size:14px}
+  .dchip-meta{font-size:11px}
+  .dchip-btn{width:38px;height:38px}
+  .dchip-grip{display:none}
+  .dchip-actions{margin-left:4px}
+  /* Patient cards */
+  .pcard{padding:12px 14px;gap:10px}
+  .pcard-avatar{width:38px;height:38px;font-size:13px}
+  .pcard-name{font-size:14px}
+  .badge{padding:5px 10px;font-size:11px}
+  /* Filters */
+  .chip{min-height:40px;padding:8px 14px;font-size:13px}
+  /* Search */
+  .search input{padding:12px 16px 12px 40px;font-size:16px}
+  /* Sheet */
+  .sheet{width:100vw;border-radius:16px 16px 0 0}
+  .sheet-handle{display:block;width:36px;height:4px;border-radius:2px;background:var(--warm-300);margin:8px auto 0}
+  .sheet-hdr{padding:12px 16px 8px}
+  .sheet-close{width:36px;height:36px}
+  .field-grid{padding:4px 16px 8px}
+  .field-row{gap:8px}
+  .field-label{width:90px;font-size:11px}
+  .field-input,.field-select{font-size:16px;padding:8px 10px}
+  .section-label{padding:8px 16px 4px}
+  .journey{padding:4px 16px 16px}
+  /* Admin */
+  .admin-card{flex-wrap:wrap;gap:6px;padding:10px 12px}
+  .admin-tabs{gap:0;padding:0 4px}
+  .admin-tab{padding:10px 12px;font-size:12px;min-height:44px}
+  .admin-btn{padding:8px 12px;font-size:12px;min-height:38px}
+  .admin-input{padding:12px 14px;font-size:16px}
+  .admin-hint{font-size:11px}
+  /* Stats */
+  .stat-nav{flex-direction:column;align-items:stretch;gap:8px}
+  .stat-nav-range{justify-content:center}
+  .stat-nav-date{justify-content:center}
+  .stat-nav-actions{justify-content:center}
+  .stat-card{padding:12px}
+  .stat-val{font-size:22px}
+  .stat-label{font-size:11px}
+  .stat-section{padding:12px;margin-bottom:14px}
+  .stat-section-title{font-size:12px;margin-bottom:8px}
+  .stat-room-card{flex-direction:column;align-items:stretch;gap:8px}
+  .stat-room-vals{justify-content:space-around;padding-top:8px;border-top:1px solid var(--warm-200)}
+  .stat-table{font-size:12px}
+  .stat-table th{padding:6px;font-size:10px}
+  .stat-table td{padding:6px}
+  /* NFC */
+  .nfc-url-box{font-size:11px;padding:8px 10px}
+  .nfc-step-text{font-size:12px}
+  /* Modal */
+  .modal{max-width:calc(100vw - 32px);border-radius:14px}
+  .modal-hdr{padding:16px 16px 6px;font-size:15px}
+  .modal-body{padding:4px 16px 12px;font-size:13px}
+  .modal-footer{padding:8px 16px 16px}
+  .modal-btn{padding:12px 20px;font-size:14px;min-height:44px}
+  /* Toast */
+  .toast{bottom:max(20px,env(safe-area-inset-bottom));font-size:13px;padding:10px 16px;border-radius:10px}
+  /* Team/Member */
+  .member-card{flex-wrap:wrap;gap:8px;padding:10px 12px}
+  .invite-form-row{flex-direction:column;gap:6px}
 }
 /* Admin Tabs */
 .admin-tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -398,11 +483,39 @@ body.panel-open{overflow:hidden}
 .backend-status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
 .backend-status.online{background:var(--mint-bg);color:var(--green)}
 .backend-status.offline{background:var(--warm-200);color:var(--text2)}
-.sync-indicator{position:fixed;top:8px;right:60px;z-index:101;font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;display:none}
+.sync-indicator{position:fixed;top:max(8px,env(safe-area-inset-top));right:60px;z-index:101;font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;display:none}
 .sync-indicator.syncing{display:block;background:var(--yellow-bg);color:var(--yellow);animation:pulse 1s infinite}
 .sync-indicator.synced{display:block;background:var(--mint-bg);color:var(--green)}
 .sync-indicator.error{display:block;background:var(--red-bg);color:var(--red)}
 .sql-box{background:var(--warm-800);color:var(--mint);border-radius:var(--rs);padding:12px 14px;font-family:monospace;font-size:11px;line-height:1.6;overflow-x:auto;white-space:pre;max-height:300px;overflow-y:auto;margin:8px 0}
+/* ── iPhone SE / small phones ── */
+@media(max-width:375px){
+  .header-date{font-size:10px;padding:2px 8px}
+  .hdr-btn{width:36px;height:36px}
+  .nav-tab{padding:8px 10px;font-size:11px}
+  .stat-grid{grid-template-columns:1fr 1fr;gap:6px}
+  .stat-val{font-size:20px}
+  .stat-card{padding:10px}
+  .room-grid{grid-template-columns:repeat(2,1fr)}
+  .dcol-hdr{padding:8px 10px;font-size:12px}
+  .dchip-name{font-size:13px}
+  .pcard{padding:10px 12px}
+  .pcard-avatar{width:34px;height:34px;font-size:12px}
+  .admin-card{padding:8px 10px}
+}
+/* ── iPhone landscape ── */
+@media(max-height:500px) and (orientation:landscape){
+  .header{padding:4px 16px 4px max(16px,env(safe-area-inset-left))}
+  .nav{padding:0 max(12px,env(safe-area-inset-left))}
+  .view{padding:8px max(16px,env(safe-area-inset-right)) 8px max(16px,env(safe-area-inset-left))}
+  .scan-hero{padding:12px 12px 8px}
+  .modal{max-width:440px}
+  .sheet{width:min(480px,70vw)}
+}
+/* ── PWA standalone mode ── */
+@media(display-mode:standalone){
+  .header{padding-top:max(12px,env(safe-area-inset-top))}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -512,8 +625,8 @@ body.panel-open{overflow:hidden}
   <div class="modal" style="max-width:400px;box-shadow:var(--shadow-lg)">
     <div style="padding:28px 24px 8px">
       <div style="font-size:16px;font-weight:700;color:var(--warm-900);margin-bottom:16px">Anmelden</div>
-      <input class="admin-input" id="loginEmail" type="email" placeholder="E-Mail" autocomplete="email" style="padding:14px 12px;font-size:15px">
-      <input class="admin-input" id="loginPass" type="password" placeholder="Passwort" autocomplete="current-password" style="padding:14px 12px;font-size:15px">
+      <input class="admin-input" id="loginEmail" type="email" placeholder="E-Mail" autocomplete="email" style="padding:14px 12px;font-size:16px">
+      <input class="admin-input" id="loginPass" type="password" placeholder="Passwort" autocomplete="current-password" style="padding:14px 12px;font-size:16px">
       <div id="loginError" style="display:none;color:var(--red);font-size:13px;margin-bottom:8px"></div>
     </div>
     <div style="padding:0 24px 12px">
@@ -1299,7 +1412,7 @@ h+=`</tbody></table></div></div>`}
 // === TAB: RÄUME ===
 if(adminActiveTab==='rooms'){
 const typeLabel={suite:'Suite',room:'Behandlung',pause:'Pause'};
-const renderLocSection=(locs)=>{return locs.map(l=>{const hasColor=l.greenTime>0||l.orangeTime>0;const redVal=l.orangeTime?Math.round(l.orangeTime*1.2):0;return`<div class="admin-card" data-room-id="${l.id}" draggable="true" ondragstart="roomDragStart(event,'${l.id}')" ondragend="roomDragEnd(event)" ondragover="roomDragOver(event)" ondragleave="roomDragLeave(event)" ondrop="roomDrop(event,'${l.id}')" ontouchstart="roomTouchStart(event,'${l.id}')" ontouchmove="roomTouchMove(event)" ontouchend="roomTouchEnd(event)" style="flex-direction:column;align-items:stretch;gap:8px;cursor:grab"><div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><span style="cursor:grab;color:var(--text2)">${ico('grip','ico-sm')}</span><span class="admin-card-icon">${roomIco(l.id)}</span><div><div class="admin-card-name">${l.name}</div><div class="admin-card-id">${l.id} · ${typeLabel[l.type]||l.type}</div></div></div><div style="display:flex;gap:4px"><button class="admin-btn" onclick="renameRoom('${l.id}')" style="padding:4px 8px;font-size:12px">Umbenennen</button><button class="admin-btn" onclick="changeRoomType('${l.id}')" style="padding:4px 8px;font-size:12px">Typ</button><button class="admin-btn danger" onclick="removeRoom('${l.id}')" style="padding:4px 8px">${ico('x','ico-sm')}</button></div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><label style="font-size:12px;color:var(--green);white-space:nowrap;font-weight:600">🟢 bis</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.greenTime||0}" onchange="updateLocTime('${l.id}','greenTime',+this.value)" min="0"><label style="font-size:12px;color:var(--orange);white-space:nowrap;font-weight:600">🟠 bis</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.orangeTime||0}" onchange="updateLocTime('${l.id}','orangeTime',+this.value)" min="0"><span style="font-size:12px;color:var(--red);font-weight:600">🔴 ab ${redVal}</span><span style="font-size:11px;color:var(--text2)">min</span>${hasColor?`<button class="admin-btn" onclick="clearLocColor('${l.id}')" style="padding:2px 8px;font-size:11px">Farbcodierung löschen</button>`:''}<button class="admin-btn" onclick="toggleLocTime('${l.id}')" style="padding:4px 10px;font-size:11px;margin-left:auto;border-radius:12px;font-weight:600;${l.showTime!==false?'background:var(--green-bg);color:var(--green);border-color:var(--green)':'background:var(--warm-200);color:var(--warm-600);border-color:var(--warm-300)'}">${l.showTime!==false?'⏱ Zeit AN':'⏱ Zeit AUS'}</button></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px;padding-top:6px;border-top:1px solid var(--warm-200)"><label style="font-size:12px;color:var(--warm-700);white-space:nowrap;font-weight:600">👥 Max. Patienten</label><input type="number" class="admin-input" style="margin-bottom:0;width:65px;text-align:center;font-size:15px" value="${l.maxPatients||0}" onchange="updateLocMax('${l.id}',+this.value)" min="0" placeholder="0"><span style="font-size:11px;color:var(--text2)">${l.maxPatients===1?'Raum wird gesperrt wenn belegt':'0 = unbegrenzt'}</span></div></div>`}).join('')};
+const renderLocSection=(locs)=>{return locs.map(l=>{const hasColor=l.greenTime>0||l.orangeTime>0;const redVal=l.orangeTime?Math.round(l.orangeTime*1.2):0;return`<div class="admin-card room-card" data-room-id="${l.id}" draggable="true" ondragstart="roomDragStart(event,'${l.id}')" ondragend="roomDragEnd(event)" ondragover="roomDragOver(event)" ondragleave="roomDragLeave(event)" ondrop="roomDrop(event,'${l.id}')" ontouchstart="roomTouchStart(event,'${l.id}')" ontouchmove="roomTouchMove(event)" ontouchend="roomTouchEnd(event)" style="flex-direction:column;align-items:stretch;gap:0;cursor:grab"><!-- Header --><div class="room-card-hdr"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="cursor:grab;color:var(--text2);flex-shrink:0">${ico('grip','ico-sm')}</span><span class="admin-card-icon" style="flex-shrink:0">${roomIco(l.id)}</span><div style="min-width:0"><div class="admin-card-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.name}</div><div class="admin-card-id">${l.id} · ${typeLabel[l.type]||l.type}</div></div></div><div style="display:flex;gap:4px;flex-shrink:0"><button class="admin-btn" onclick="renameRoom('${l.id}')" style="padding:4px 8px;font-size:11px">✎</button><button class="admin-btn" onclick="changeRoomType('${l.id}')" style="padding:4px 8px;font-size:11px">Typ</button><button class="admin-btn danger" onclick="removeRoom('${l.id}')" style="padding:4px 8px">${ico('x','ico-sm')}</button></div></div><!-- Time Grid --><div class="room-card-times"><div class="room-time-row"><label style="color:var(--green)">🟢 bis</label><input type="number" class="admin-input" style="margin:0;width:60px;text-align:center;font-size:16px;padding:8px 4px" value="${l.greenTime||0}" onchange="updateLocTime('${l.id}','greenTime',+this.value)" min="0"><label style="color:var(--orange)">🟠 bis</label><input type="number" class="admin-input" style="margin:0;width:60px;text-align:center;font-size:16px;padding:8px 4px" value="${l.orangeTime||0}" onchange="updateLocTime('${l.id}','orangeTime',+this.value)" min="0"><span style="font-size:11px;color:var(--red);font-weight:600;white-space:nowrap">🔴 ${redVal}+</span></div><div class="room-time-actions"><button class="admin-btn" onclick="toggleLocTime('${l.id}')" style="padding:4px 10px;font-size:11px;border-radius:12px;font-weight:600;${l.showTime!==false?'background:var(--green-bg);color:var(--green);border-color:var(--green)':'background:var(--warm-200);color:var(--warm-600);border-color:var(--warm-300)'}">${l.showTime!==false?'⏱ AN':'⏱ AUS'}</button>${hasColor?`<button class="admin-btn" onclick="clearLocColor('${l.id}')" style="padding:4px 8px;font-size:11px">Farben ✕</button>`:''}</div></div><!-- Max Patients --><div class="room-card-max"><label style="font-size:12px;color:var(--warm-700);font-weight:600;white-space:nowrap">👥 Max</label><input type="number" class="admin-input" style="margin:0;width:55px;text-align:center;font-size:16px;padding:8px 4px" value="${l.maxPatients||0}" onchange="updateLocMax('${l.id}',+this.value)" min="0" placeholder="0"><span style="font-size:11px;color:var(--text2)">${l.maxPatients===1?'gesperrt wenn belegt':'0 = unbegrenzt'}</span></div></div>`}).join('')};
 h+=`<p class="admin-hint">Zeitlimits bestimmen die Farbcodierung: Grün → Orange → Rot (120% von Orange). Max. Patienten: bei 1 wird der Raum gesperrt, bei >1 erscheint eine Warnung. 0 = unbegrenzt. Räume per Drag & Drop sortieren.</p>`;
 h+=`<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin:8px 0 4px">Suiten</div>${renderLocSection(SUITE_ROOMS)}`;
 h+=`<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin:12px 0 4px">Behandlungsräume</div>${renderLocSection(STATIONS)}`;
@@ -1311,7 +1424,7 @@ if(adminActiveTab==='treatments'){
 const sortedTx=[...treatments].sort((a,b)=>a.order-b.order);
 const txByRoom={};sortedTx.forEach(t=>{const rm=t.room||'none';if(!txByRoom[rm])txByRoom[rm]=[];txByRoom[rm].push(t)});
 h+=`<p class="admin-hint">Untersuchungen verwalten und Räumen zuordnen. Reihenfolge per Pfeile ändern.</p>`;
-STATIONS.forEach(st=>{const rTx=txByRoom[st.id]||[];h+=`<div style="margin-bottom:12px;padding:10px;background:var(--warm-100);border-radius:var(--rs)"><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;display:flex;align-items:center;gap:4px">${roomIco(st.id,'ico-sm')} ${st.name} <span style="font-weight:400">(${rTx.length})</span></div>`;rTx.forEach((t,i)=>{h+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:13px"><span style="flex:1;font-weight:500">${t.name}</span>${i>0?`<button class="admin-btn" onclick="moveTx('${t.id}',-1)" style="padding:2px 6px;font-size:11px" title="Hoch">↑</button>`:''}<button class="admin-btn" onclick="moveTx('${t.id}',1)" style="padding:2px 6px;font-size:11px" title="Runter">↓</button><button class="admin-btn" onclick="renameTx('${t.id}')" style="padding:2px 6px;font-size:11px">✎</button><select class="admin-input" style="margin:0;width:auto;font-size:11px;padding:2px 4px" onchange="reassignTx('${t.id}',this.value)">${STATIONS.map(s=>`<option value="${s.id}"${s.id===t.room?' selected':''}>${s.name}</option>`).join('')}</select><button class="admin-btn danger" onclick="removeTx('${t.id}')" style="padding:2px 6px">${ico('x','ico-sm')}</button></div>`});h+=`<div style="display:flex;gap:4px;margin-top:4px"><input class="admin-input" id="newTxName_${st.id}" placeholder="+ Neue Untersuchung" style="margin:0;flex:1;font-size:12px;padding:4px 8px"><button class="admin-btn primary" onclick="addTx('${st.id}')" style="padding:4px 8px;font-size:12px">+</button></div></div>`});
+STATIONS.forEach(st=>{const rTx=txByRoom[st.id]||[];h+=`<div style="margin-bottom:12px;padding:10px;background:var(--warm-100);border-radius:var(--rs)"><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px;display:flex;align-items:center;gap:4px">${roomIco(st.id,'ico-sm')} ${st.name} <span style="font-weight:400">(${rTx.length})</span></div>`;rTx.forEach((t,i)=>{h+=`<div style="display:flex;align-items:center;gap:4px;padding:6px 0;font-size:13px;border-bottom:1px solid var(--warm-200)"><span style="flex:1;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</span><div style="display:flex;gap:3px;flex-shrink:0">${i>0?`<button class="admin-btn" onclick="moveTx('${t.id}',-1)" style="padding:4px 8px;font-size:11px;min-height:32px" title="Hoch">↑</button>`:''}<button class="admin-btn" onclick="moveTx('${t.id}',1)" style="padding:4px 8px;font-size:11px;min-height:32px" title="Runter">↓</button><button class="admin-btn" onclick="renameTx('${t.id}')" style="padding:4px 8px;font-size:11px;min-height:32px">✎</button><button class="admin-btn danger" onclick="removeTx('${t.id}')" style="padding:4px 6px;min-height:32px">${ico('x','ico-sm')}</button></div></div><div style="padding:2px 0 6px"><select class="admin-input" style="margin:0;width:100%;font-size:16px;padding:6px 8px" onchange="reassignTx('${t.id}',this.value)">${STATIONS.map(s=>`<option value="${s.id}"${s.id===t.room?' selected':''}>${s.name}</option>`).join('')}</select></div>`});h+=`<div style="display:flex;gap:4px;margin-top:4px"><input class="admin-input" id="newTxName_${st.id}" placeholder="+ Neue Untersuchung" style="margin:0;flex:1;font-size:16px;padding:8px 10px"><button class="admin-btn primary" onclick="addTx('${st.id}')" style="padding:8px 12px;font-size:13px;min-height:40px">+</button></div></div>`});
 h+=`<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin:16px 0 6px;border-top:2px solid var(--border);padding-top:12px">Status-Optionen (Dropdown)</div><p class="admin-hint">Diese Optionen erscheinen im Behandlungs-Dropdown. "Zählt als erledigt" fließt in die Fortschrittsberechnung ein.</p>`;
 txStatuses.forEach(s=>{h+=`<div class="admin-card" style="margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px;flex:1"><span style="font-weight:600;font-size:13px">${s.label}</span><button class="admin-btn" onclick="toggleTxStatusDone('${s.id}')" style="padding:2px 8px;font-size:11px;${s.countAsDone?'background:var(--mint-bg);color:var(--green)':''}">${s.countAsDone?'✓ Erledigt':'Offen'}</button></div><div style="display:flex;gap:4px"><button class="admin-btn" onclick="renameTxStatus('${s.id}')" style="padding:2px 6px;font-size:11px">✎</button><button class="admin-btn danger" onclick="removeTxStatus('${s.id}')" style="padding:2px 6px">${ico('x','ico-sm')}</button></div></div>`});
 h+=`<div style="display:flex;gap:4px;margin-top:4px"><input class="admin-input" id="newTxStatusLabel" placeholder="+ Neuer Status" style="margin:0;flex:1;font-size:12px;padding:4px 8px"><button class="admin-btn primary" onclick="addTxStatus()" style="padding:4px 8px;font-size:12px">+</button></div>`;
@@ -1319,10 +1432,10 @@ h+=`<div style="display:flex;gap:4px;margin-top:4px"><input class="admin-input" 
 // === TAB: BETRIEB ===
 if(adminActiveTab==='ops'){
 h+=`<div style="font-size:14px;font-weight:700;margin-bottom:12px">${ico('clock','ico-sm')} Zeitfenster</div>`;
-h+=`<p class="admin-hint">Start- und Endzeiten für die Terminplanung.</p>${timeSlots.map(ts=>`<div class="admin-card"><div class="admin-card-info"><span class="admin-card-icon">${ico('clock','ico-sm')}</span><div class="admin-card-name">${ts.start} – ${ts.end}</div></div><button style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px" onclick="removeTimeSlot('${ts.id}')">&times;</button></div>`).join('')}<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="time" class="admin-input" id="tsStart" style="margin-bottom:0;flex:1" value="10:30"><span style="color:var(--text2)">bis</span><input type="time" class="admin-input" id="tsEnd" style="margin-bottom:0;flex:1" value="11:00"><button class="admin-btn primary" onclick="addTimeSlot()">+</button></div>`;
+h+=`<p class="admin-hint">Start- und Endzeiten für die Terminplanung.</p>${timeSlots.map(ts=>`<div class="admin-card"><div class="admin-card-info"><span class="admin-card-icon">${ico('clock','ico-sm')}</span><div class="admin-card-name">${ts.start} – ${ts.end}</div></div><button style="background:none;border:none;cursor:pointer;color:var(--red);font-size:16px" onclick="removeTimeSlot('${ts.id}')">&times;</button></div>`).join('')}<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="time" class="admin-input" id="tsStart" style="margin-bottom:0;flex:1;font-size:16px;padding:10px" value="10:30"><span style="color:var(--text2)">bis</span><input type="time" class="admin-input" id="tsEnd" style="margin-bottom:0;flex:1;font-size:16px;padding:10px" value="11:00"><button class="admin-btn primary" onclick="addTimeSlot()" style="min-height:44px;padding:10px 14px">+</button></div>`;
 const roleLabels={admin:'Admin',arzt:'Arzt',mfa:'MFA'};const roleClasses={admin:'role-admin',arzt:'role-arzt',mfa:'role-mfa'};const roleColors={admin:'var(--purple-bg)',arzt:'var(--mint-bg)',mfa:'var(--orange-bg)'};const roleText={admin:'var(--purple)',arzt:'var(--green)',mfa:'var(--orange)'};
 h+=`<div style="font-size:14px;font-weight:700;margin:20px 0 12px;padding-top:16px;border-top:2px solid var(--border)">${ico('users','ico-sm')} Team</div>`;
-h+=`<div class="invite-form"><div style="font-weight:600;font-size:14px;margin-bottom:10px">${ico('userPlus','ico-sm')} Neues Mitglied</div><div class="invite-form-row"><input class="admin-input" id="invName" placeholder="Name" style="flex:1;margin-bottom:0"><input class="admin-input" id="invEmail" placeholder="E-Mail" style="flex:1;margin-bottom:0"></div><div class="invite-form-row"><select class="admin-input" id="invRole" style="flex:1;margin-bottom:0"><option value="mfa">MFA</option><option value="arzt">Arzt / Ärztin</option><option value="admin">Admin</option></select><button class="admin-btn primary" onclick="inviteTeamMember()" style="white-space:nowrap;padding:10px 18px">Einladen</button></div></div>${teamMembers.map(m=>{const init=m.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);return`<div class="member-card"><div class="member-info"><div class="member-avatar" style="background:${roleColors[m.role]};color:${roleText[m.role]}">${init}</div><div><div class="member-name">${m.name}</div><div class="member-email">${m.email}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span class="role-badge ${roleClasses[m.role]}">${roleLabels[m.role]}</span>${m.id!=='t1'?`<button class="admin-btn danger" onclick="removeTeamMember('${m.id}')" style="padding:4px 8px">${ico('x','ico-sm')}</button>`:''}</div></div>`}).join('')}`;
+h+=`<div class="invite-form"><div style="font-weight:600;font-size:14px;margin-bottom:10px">${ico('userPlus','ico-sm')} Neues Mitglied</div><div class="invite-form-row"><input class="admin-input" id="invName" placeholder="Name" style="flex:1;margin-bottom:0;font-size:16px"><input class="admin-input" id="invEmail" placeholder="E-Mail" style="flex:1;margin-bottom:0;font-size:16px"></div><div class="invite-form-row"><select class="admin-input" id="invRole" style="flex:1;margin-bottom:0;font-size:16px"><option value="mfa">MFA</option><option value="arzt">Arzt / Ärztin</option><option value="admin">Admin</option></select><button class="admin-btn primary" onclick="inviteTeamMember()" style="white-space:nowrap;padding:10px 18px;min-height:44px">Einladen</button></div></div>${teamMembers.map(m=>{const init=m.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);return`<div class="member-card"><div class="member-info"><div class="member-avatar" style="background:${roleColors[m.role]};color:${roleText[m.role]}">${init}</div><div><div class="member-name">${m.name}</div><div class="member-email">${m.email}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span class="role-badge ${roleClasses[m.role]}">${roleLabels[m.role]}</span>${m.id!=='t1'?`<button class="admin-btn danger" onclick="removeTeamMember('${m.id}')" style="padding:4px 8px">${ico('x','ico-sm')}</button>`:''}</div></div>`}).join('')}`;
 h+=`<div style="font-size:14px;font-weight:700;margin:20px 0 12px;padding-top:16px;border-top:2px solid var(--border)">${ico('wifi','ico-sm')} NFC-Tags</div>`;
 h+=`<p class="admin-hint">Schreibe folgende URLs auf deine NFC-Tags (z.B. mit der App "NFC Tools").</p><div style="background:var(--warm-100);border-radius:var(--rs);padding:14px;margin-bottom:10px"><div style="font-weight:600;font-size:13px;margin-bottom:8px">Anleitung:</div><div class="nfc-step"><div class="nfc-step-num">1</div><div class="nfc-step-text">Lade <strong>"NFC Tools"</strong> (kostenlos) herunter.</div></div><div class="nfc-step"><div class="nfc-step-num">2</div><div class="nfc-step-text">Schreiben → Datensatz → URL/URI.</div></div><div class="nfc-step"><div class="nfc-step-num">3</div><div class="nfc-step-text">URL eingeben und auf Tag schreiben.</div></div><div class="nfc-step"><div class="nfc-step-num">4</div><div class="nfc-step-text">Tag neben die Tür kleben. Fertig!</div></div></div><div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">URLs pro Raum:</div>${ALL_LOCS.map(l=>`<div class="admin-card" style="flex-direction:column;align-items:stretch;gap:4px"><div style="display:flex;align-items:center;gap:8px"><span class="admin-card-icon">${roomIco(l.id)}</span><span class="admin-card-name">${l.name}</span></div><div class="nfc-url-box">${baseUrl}?room=${l.id}</div></div>`).join('')}`;
 }
@@ -1356,9 +1469,9 @@ if(adminActiveTab==='backend'){
   h+=`<div class="acc${!isConnected?' open':''}"><div class="acc-hdr" onclick="this.parentElement.classList.toggle('open')"><div class="acc-hdr-left">${ico('settings','ico-sm')} Supabase Konfiguration</div><div class="acc-arrow">${ico('chevDown','ico-sm')}</div></div><div class="acc-body"><div class="acc-inner">`;
   h+=`<div class="admin-hint">Erstelle ein kostenloses Projekt auf <a href="https://supabase.com" target="_blank" style="color:var(--green);font-weight:600">supabase.com</a> und trage die Zugangsdaten hier ein.</div>`;
   h+=`<label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">Supabase URL</label>`;
-  h+=`<input class="admin-input" id="supaUrlInput" placeholder="https://abc123.supabase.co" value="${cfg.url||''}">`;
+  h+=`<input class="admin-input" id="supaUrlInput" placeholder="https://abc123.supabase.co" value="${cfg.url||''}" style="font-size:16px">`;
   h+=`<label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">Anon Key</label>`;
-  h+=`<input class="admin-input" id="supaKeyInput" placeholder="eyJhbGciOi..." value="${cfg.anonKey||''}" type="password">`;
+  h+=`<input class="admin-input" id="supaKeyInput" placeholder="eyJhbGciOi..." value="${cfg.anonKey||''}" type="password" style="font-size:16px">`;
   h+=`<div style="display:flex;gap:8px;margin-top:8px"><button class="admin-btn primary" onclick="saveBackendConfig()">Speichern & Verbinden</button>`;
   if(cfg.url)h+=`<button class="admin-btn danger" onclick="clearBackendConfig()">Trennen</button>`;
   h+=`</div></div></div></div>`;
