@@ -1021,7 +1021,7 @@ function handleRealtimeProfileChange(payload){
     teamMembers=teamMembers.filter(m=>m.id!==oldId);
   }else if(row){
     const idx=teamMembers.findIndex(m=>m.id===row.id);
-    const mapped={id:row.id,name:row.full_name||row.email,email:row.email,role:row.role||'mfa'};
+    const mapped={id:row.id,name:row.full_name||row.email,email:row.email,role:row.role||'mfa',status:row.status||'active'};
     if(idx>=0)teamMembers[idx]=mapped;
     else teamMembers.push(mapped);
   }
@@ -1077,10 +1077,10 @@ function startConfigPolling(){
       // Poll profiles
       const{data:team}=await supaClient.from('profiles').select('*');
       if(team){
-        const newTeamHash=team.map(t=>t.id+(t.full_name||'')+t.email+t.role).join('|');
-        const curTeamHash=teamMembers.map(m=>m.id+m.name+m.email+m.role).join('|');
+        const newTeamHash=team.map(t=>t.id+(t.full_name||'')+t.email+t.role+(t.status||'')).join('|');
+        const curTeamHash=teamMembers.map(m=>m.id+m.name+m.email+m.role+(m.status||'')).join('|');
         if(newTeamHash!==curTeamHash){
-          teamMembers=team.map(t=>({id:t.id,name:t.full_name||t.email,email:t.email,role:t.role||'mfa'}));
+          teamMembers=team.map(t=>({id:t.id,name:t.full_name||t.email,email:t.email,role:t.role||'mfa',status:t.status||'active'}));
           renderAll()
         }
       }
@@ -1696,11 +1696,42 @@ async function removeSuite(s){const r=await showModal('Suite entfernen?',`<p>Sui
 function addTimeSlot(){const s=document.getElementById('tsStart').value,e=document.getElementById('tsEnd').value;if(!s||!e){toast('Bitte Start- und Endzeit eingeben');return}if(s>=e){toast('Startzeit muss vor Endzeit liegen');return}timeSlots.push({id:'ts'+Date.now(),start:s,end:e});timeSlots.sort((a,b)=>a.start.localeCompare(b.start));saveData();renderAdmin();toast(`Zeitfenster ${s}–${e} hinzugefügt`)}
 async function removeTimeSlot(id){const ts=timeSlots.find(x=>x.id===id);if(!ts)return;const r=await showModal('Zeitfenster entfernen?',`<p>${ts.start} – ${ts.end} wirklich entfernen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes')return;timeSlots=timeSlots.filter(x=>x.id!==id);saveData();renderAdmin();toast('Zeitfenster entfernt')}
 async function inviteTeamMember(){const n=document.getElementById('invName').value.trim(),e=document.getElementById('invEmail').value.trim(),r=document.getElementById('invRole').value;if(!n||!e){toast('Bitte Name und E-Mail eingeben');return}if(!e.includes('@')){toast('Bitte gültige E-Mail');return}
-const tempPw='Years-'+Math.random().toString(36).substring(2,8).toUpperCase();if(backendMode==='supabase'){const{data:sess}=await supaClient.auth.getSession();const curSession=sess?.session;const siteUrl=window.location.origin+window.location.pathname;const{data,error}=await supaClient.auth.signUp({email:e,password:tempPw,options:{data:{full_name:n,role:r},emailRedirectTo:siteUrl}});if(error){toast('Fehler: '+error.message);return}const uid=data?.user?.id||'t'+Date.now();if(curSession){await supaClient.auth.setSession({access_token:curSession.access_token,refresh_token:curSession.refresh_token})}let profErr;try{const r1=await supaClient.from('profiles').upsert({id:uid,email:e,full_name:n,role:r,status:'invited'},{onConflict:'id'});profErr=r1.error;if(profErr&&profErr.message.includes('status')){const r2=await supaClient.from('profiles').upsert({id:uid,email:e,full_name:n,role:r},{onConflict:'id'});profErr=r2.error}}catch(ex){}if(profErr)console.warn('Profile upsert warning:',profErr.message);
+if(teamMembers.find(m=>m.email.toLowerCase()===e.toLowerCase())){toast('Diese E-Mail ist bereits im Team');return}
+const tempPw='Years-'+Math.random().toString(36).substring(2,8).toUpperCase();if(backendMode==='supabase'){const{data:sess}=await supaClient.auth.getSession();const curSession=sess?.session;const siteUrl=window.location.origin+window.location.pathname;
+// Check if auth user already exists (previously removed)
+const{data:existingProf}=await supaClient.from('profiles').select('id,status').eq('email',e).maybeSingle();
+let uid,emailSent=false;
+if(existingProf){
+// Profile exists — user was previously in system, re-activate
+uid=existingProf.id;await supaClient.from('profiles').update({full_name:n,role:r,status:'invited'}).eq('id',uid);
+// Resend confirmation email
+const{error:resendErr}=await supaClient.auth.resend({type:'signup',email:e,options:{emailRedirectTo:siteUrl}});
+emailSent=!resendErr;if(!emailSent)console.warn('Resend failed, trying signUp:',resendErr?.message);
+}
+if(!existingProf){
+// Completely new user — signUp
+const{data,error}=await supaClient.auth.signUp({email:e,password:tempPw,options:{data:{full_name:n,role:r},emailRedirectTo:siteUrl}});if(error){toast('Fehler: '+error.message);return}
+// Check if signUp returned existing user (empty identities = email already in auth)
+const isGhost=data?.user?.identities?.length===0;
+if(isGhost){
+// Auth user exists but no profile — create profile and resend
+uid=data.user.id;const{error:resendErr}=await supaClient.auth.resend({type:'signup',email:e,options:{emailRedirectTo:siteUrl}});emailSent=!resendErr;
+}else{uid=data?.user?.id||'t'+Date.now();emailSent=true}
+// Restore admin session
+if(curSession){await supaClient.auth.setSession({access_token:curSession.access_token,refresh_token:curSession.refresh_token})}
+// Upsert profile
+await supaClient.from('profiles').upsert({id:uid,email:e,full_name:n,role:r,status:'invited'},{onConflict:'id'}).then(()=>{});
+}else if(curSession){await supaClient.auth.setSession({access_token:curSession.access_token,refresh_token:curSession.refresh_token})}
 const newMember={id:uid,name:n,email:e,role:r,status:'invited'};teamMembers.push(newMember);saveData();renderAdmin();
-const modal=await showModal('Einladung erstellt',`<div class="invite-result"><div class="invite-result-label">Benutzer:</div><div style="font-weight:600;margin-bottom:8px">${n} (${e})</div><div style="font-size:12px;color:var(--green);margin-bottom:12px">✓ Bestätigungs-E-Mail wurde automatisch gesendet</div><div class="invite-result-label">Temporäres Passwort:</div><div class="invite-result-pw">${tempPw}</div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Der Benutzer muss zuerst die E-Mail bestätigen, dann kann er sich mit diesem Passwort einloggen.</div><div style="font-size:11px;color:var(--text2);background:var(--warm-100);padding:8px 10px;border-radius:var(--rs)">💡 Tipp: Teile das Passwort persönlich oder per Nachricht mit.</div></div>`,[{label:'OK',cls:'modal-btn',val:'ok'}]);
-document.getElementById('invName').value='';document.getElementById('invEmail').value='';document.getElementById('invRole').value='mfa';toast(`${n} eingeladen — E-Mail gesendet`)}else{teamMembers.push({id:'t'+Date.now(),name:n,email:e,role:r});saveData();renderAdmin();toast(`${n} eingeladen`)}}
-async function removeTeamMember(id){const m=teamMembers.find(x=>x.id===id);if(!m)return;const r=await showModal('Mitglied entfernen?',`<p><strong>${m.name}</strong> wirklich entfernen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes')return;if(backendMode==='supabase'){const{error}=await supaClient.from('profiles').delete().eq('id',id);if(error){toast('Fehler: '+error.message);return}}
+const emailNote=emailSent?'<div style="font-size:12px;color:var(--green);margin-bottom:12px">✓ Bestätigungs-E-Mail wurde gesendet</div>':'<div style="font-size:12px;color:var(--orange);margin-bottom:12px">⚠ E-Mail konnte nicht gesendet werden — bitte Zugangsdaten manuell teilen</div>';
+await showModal('Einladung erstellt',`<div class="invite-result"><div class="invite-result-label">Benutzer:</div><div style="font-weight:600;margin-bottom:8px">${n} (${e})</div>${emailNote}<div class="invite-result-label">Temporäres Passwort:</div><div class="invite-result-pw">${tempPw}</div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Der Benutzer muss zuerst die E-Mail bestätigen, dann kann er sich mit diesem Passwort einloggen.</div><div style="font-size:11px;color:var(--text2);background:var(--warm-100);padding:8px 10px;border-radius:var(--rs)">💡 Tipp: Teile das Passwort persönlich oder per Nachricht mit.</div></div>`,[{label:'OK',cls:'modal-btn',val:'ok'}]);
+document.getElementById('invName').value='';document.getElementById('invEmail').value='';document.getElementById('invRole').value='mfa';toast(`${n} eingeladen`)}else{if(teamMembers.find(m=>m.email.toLowerCase()===e.toLowerCase())){toast('Diese E-Mail ist bereits im Team');return}teamMembers.push({id:'t'+Date.now(),name:n,email:e,role:r});saveData();renderAdmin();toast(`${n} eingeladen`)}}
+async function removeTeamMember(id){const m=teamMembers.find(x=>x.id===id);if(!m)return;const r=await showModal('Mitglied entfernen?',`<p><strong>${m.name}</strong> (${m.email}) wirklich entfernen?</p><p style="font-size:12px;color:var(--text2)">Der Benutzer wird komplett gelöscht und kann sich nicht mehr anmelden.</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes')return;if(backendMode==='supabase'){
+// Delete profile first
+const{error:profErr}=await supaClient.from('profiles').delete().eq('id',id);if(profErr)console.warn('Profile delete:',profErr.message);
+// Delete auth user via RPC (SECURITY DEFINER function)
+const{error:authErr}=await supaClient.rpc('delete_auth_user',{p_user_id:id});if(authErr)console.warn('Auth delete:',authErr.message);
+}
 teamMembers=teamMembers.filter(x=>x.id!==id);saveData();renderAdmin();toast(`${m.name} entfernt`)}
 async function changePassword(){if(backendMode!=='supabase'){toast('Passwortänderung nur in Supabase-Modus verfügbar');return}
 const pw=prompt('Neues Passwort:');if(!pw){return}
