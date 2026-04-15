@@ -338,8 +338,7 @@ body.panel-open{overflow:hidden}
   .dash-col-grid{grid-template-columns:repeat(2,1fr)}
   .view{padding:12px 16px}
   .sheet{width:min(520px,85vw)}
-  .stat-room-card{flex-wrap:wrap;gap:8px}
-  .stat-room-vals{width:100%;justify-content:space-around;padding-top:8px;border-top:1px solid var(--warm-200)}
+  .stat-room-vals{justify-content:space-around}
   .modal{max-width:420px}
 }
 /* ── iPhone / small mobile ── */
@@ -408,8 +407,7 @@ body.panel-open{overflow:hidden}
   .stat-label{font-size:11px}
   .stat-section{padding:12px;margin-bottom:14px}
   .stat-section-title{font-size:12px;margin-bottom:8px}
-  .stat-room-card{flex-direction:column;align-items:stretch;gap:8px}
-  .stat-room-vals{justify-content:space-around;padding-top:8px;border-top:1px solid var(--warm-200)}
+  .stat-room-val .v{font-size:14px}
   .stat-table{font-size:12px}
   .stat-table th{padding:6px;font-size:10px}
   .stat-table td{padding:6px}
@@ -456,15 +454,15 @@ body.panel-open{overflow:hidden}
 .stat-delta.over{color:var(--red);background:var(--red-bg)}.stat-delta.under{color:var(--green);background:var(--mint-bg)}.stat-delta.neutral{color:var(--text2);background:var(--warm-100)}
 .stat-empty{text-align:center;padding:40px 16px;color:var(--text2);font-size:14px}
 .stat-empty-ico{font-size:32px;margin-bottom:8px;opacity:.4}
-.stat-room-card{background:var(--warm-100);border-radius:var(--rs);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.stat-room-card{background:var(--warm-100);border-radius:var(--rs);padding:12px;margin-bottom:8px}
 .stat-room-card:last-child{margin-bottom:0}
-.stat-room-info{flex:1;min-width:0}
-.stat-room-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
-.stat-room-meta{font-size:12px;color:var(--text2);margin-top:2px}
-.stat-room-vals{display:flex;gap:12px;align-items:center;flex-shrink:0}
-.stat-room-val{text-align:center}
-.stat-room-val .v{font-size:16px;font-weight:800}
-.stat-room-val .l{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
+.stat-room-hdr{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.stat-room-name{font-size:13px;font-weight:700;flex:1;min-width:0}
+.stat-room-meta{font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.4}
+.stat-room-vals{display:flex;gap:8px;align-items:center;padding-top:8px;border-top:1px solid var(--warm-200)}
+.stat-room-val{flex:1;text-align:center;min-width:0}
+.stat-room-val .v{font-size:15px;font-weight:800;white-space:nowrap}
+.stat-room-val .l{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
 /* Date navigation */
 .stat-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap}
 .stat-nav-range{display:flex;gap:2px;background:var(--warm-200);border-radius:var(--rs);padding:2px}
@@ -1398,10 +1396,10 @@ delays.sort((a,b)=>b.diff-a.diff).forEach(d=>{const cls=d.diff>10?'over':d.diff>
 h+=`</tbody></table></div></div>`}
 const roomTimes=data.roomTimes||{};
 h+=`<div class="stat-section"><div class="stat-section-title">${ico('building','ico-sm')} Räume — Dauer & Besuche</div>`;
-STATIONS.forEach(l=>{const rt=roomTimes[l.id];if(!rt||!rt.visits)return;const avg=rt.visits?rt.total/rt.visits:0;const avgMin=avg/6e4;const sollMin=l.orangeTime||0;const delta=sollMin?avgMin-sollMin:0;const deltaCls=delta>5?'over':delta>0?'over':delta<-2?'under':'neutral';const pct=rt.visits?Math.min(100,Math.round(rt.visits/Math.max(data.patChecked,1)*100)):0;h+=`<div class="stat-room-card"><div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">${roomIco(l.id,'ico-sm')}<div class="stat-room-info"><div class="stat-room-name">${l.name}</div><div class="stat-room-meta">${rt.visits} Besuche · max ${fm(rt.maxStay)}${sollMin?` · Soll ${sollMin} min`:''}</div></div></div><div class="stat-room-vals"><div class="stat-room-val"><div class="v">${fm(avg)}</div><div class="l">Ø Dauer</div></div>${sollMin?`<div class="stat-room-val"><div class="v"><span class="stat-delta ${deltaCls}">${fmDelta(delta)}</span></div><div class="l">vs. Soll</div></div>`:''}<div class="stat-room-val"><div style="display:flex;align-items:center;gap:4px"><div class="stat-bar-bg" style="width:50px"><div class="stat-bar" style="width:${pct}%;background:${pct>80?'var(--red)':pct>50?'var(--orange)':'var(--green)'}"></div></div><span style="font-size:13px;font-weight:700">${pct}%</span></div><div class="l">Besucht</div></div></div></div>`});
+STATIONS.forEach(l=>{const rt=roomTimes[l.id];if(!rt||!rt.visits)return;const avg=rt.visits?rt.total/rt.visits:0;const avgMin=avg/6e4;const sollMin=l.orangeTime||0;const delta=sollMin?avgMin-sollMin:0;const deltaCls=delta>5?'over':delta>0?'over':delta<-2?'under':'neutral';const pct=rt.visits?Math.min(100,Math.round(rt.visits/Math.max(data.patChecked,1)*100)):0;h+=`<div class="stat-room-card"><div class="stat-room-hdr">${roomIco(l.id,'ico-sm')}<div class="stat-room-name">${l.name}</div></div><div class="stat-room-meta">${rt.visits} Besuche · max ${fm(rt.maxStay)}${sollMin?' · Soll '+sollMin+' min':''}</div><div class="stat-room-vals"><div class="stat-room-val"><div class="v">${fm(avg)}</div><div class="l">Ø Dauer</div></div>${sollMin?`<div class="stat-room-val"><div class="v"><span class="stat-delta ${deltaCls}">${fmDelta(delta)}</span></div><div class="l">vs. Soll</div></div>`:''}<div class="stat-room-val"><div class="v">${pct}%</div><div class="l">Besucht</div><div class="stat-bar-bg" style="width:100%;margin-top:4px"><div class="stat-bar" style="width:${pct}%;background:${pct>80?'var(--red)':pct>50?'var(--orange)':'var(--green)'}"></div></div></div></div></div>`});
 h+=`</div>`;
 h+=`<div class="stat-section"><div class="stat-section-title">${ico('armchair','ico-sm')} Wartezeiten pro Pausenraum</div>`;
-PAUSES.forEach(l=>{const rt=roomTimes[l.id];if(!rt||!rt.visits)return;const avg=rt.visits?rt.total/rt.visits:0;const avgMin=avg/6e4;const sollMin=l.orangeTime||0;const delta=sollMin?avgMin-sollMin:0;const deltaCls=delta>5?'over':delta>0?'over':delta<-2?'under':'neutral';h+=`<div class="stat-room-card"><div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">${roomIco(l.id,'ico-sm')}<div class="stat-room-info"><div class="stat-room-name">${l.name}</div><div class="stat-room-meta">${rt.visits} Besuche · max ${fm(rt.maxStay)}${sollMin?` · Soll ${sollMin} min`:''}</div></div></div><div class="stat-room-vals"><div class="stat-room-val"><div class="v">${fm(avg)}</div><div class="l">Ø Dauer</div></div>${sollMin?`<div class="stat-room-val"><div class="v"><span class="stat-delta ${deltaCls}">${fmDelta(delta)}</span></div><div class="l">vs. Soll</div></div>`:''}</div></div>`});
+PAUSES.forEach(l=>{const rt=roomTimes[l.id];if(!rt||!rt.visits)return;const avg=rt.visits?rt.total/rt.visits:0;const avgMin=avg/6e4;const sollMin=l.orangeTime||0;const delta=sollMin?avgMin-sollMin:0;const deltaCls=delta>5?'over':delta>0?'over':delta<-2?'under':'neutral';h+=`<div class="stat-room-card"><div class="stat-room-hdr">${roomIco(l.id,'ico-sm')}<div class="stat-room-name">${l.name}</div></div><div class="stat-room-meta">${rt.visits} Besuche · max ${fm(rt.maxStay)}${sollMin?' · Soll '+sollMin+' min':''}</div><div class="stat-room-vals"><div class="stat-room-val"><div class="v">${fm(avg)}</div><div class="l">Ø Dauer</div></div>${sollMin?`<div class="stat-room-val"><div class="v"><span class="stat-delta ${deltaCls}">${fmDelta(delta)}</span></div><div class="l">vs. Soll</div></div>`:''}</div></div>`});
 h+=`</div>`;
 const patDet=data.patDetails||[];
 if(patDet.length){h+=`<div class="stat-section"><div class="stat-section-title">Patientenübersicht</div><div style="overflow-x:auto"><table class="stat-table"><thead><tr><th>Patient</th><th>Programm</th><th>Durchlaufzeit</th><th>Wartezeit</th><th>Fortschritt</th><th>Status</th></tr></thead><tbody>`;
@@ -1683,16 +1681,16 @@ async function removeSuite(s){const r=await showModal('Suite entfernen?',`<p>Sui
 function addTimeSlot(){const s=document.getElementById('tsStart').value,e=document.getElementById('tsEnd').value;if(!s||!e){toast('Bitte Start- und Endzeit eingeben');return}if(s>=e){toast('Startzeit muss vor Endzeit liegen');return}timeSlots.push({id:'ts'+Date.now(),start:s,end:e});timeSlots.sort((a,b)=>a.start.localeCompare(b.start));saveData();renderAdmin();toast(`Zeitfenster ${s}–${e} hinzugefügt`)}
 async function removeTimeSlot(id){const ts=timeSlots.find(x=>x.id===id);if(!ts)return;const r=await showModal('Zeitfenster entfernen?',`<p>${ts.start} – ${ts.end} wirklich entfernen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes')return;timeSlots=timeSlots.filter(x=>x.id!==id);saveData();renderAdmin();toast('Zeitfenster entfernt')}
 async function inviteTeamMember(){const n=document.getElementById('invName').value.trim(),e=document.getElementById('invEmail').value.trim(),r=document.getElementById('invRole').value;if(!n||!e){toast('Bitte Name und E-Mail eingeben');return}if(!e.includes('@')){toast('Bitte gültige E-Mail');return}
-const tempPw='Years-'+Math.random().toString(36).substring(2,8).toUpperCase();if(backendMode==='supabase'){const{data,error}=await supaClient.rpc('invite_user',{p_email:e,p_role:r,p_name:n,p_password:tempPw});if(error){toast('Fehler: '+error.message);return}
-const newMember={id:data?.user_id||'t'+Date.now(),name:n,email:e,role:r};teamMembers.push(newMember);saveData();renderAdmin();
+const tempPw='Years-'+Math.random().toString(36).substring(2,8).toUpperCase();if(backendMode==='supabase'){const{data:sess}=await supaClient.auth.getSession();const curSession=sess?.session;const{data,error}=await supaClient.auth.signUp({email:e,password:tempPw,options:{data:{full_name:n,role:r}}});if(error){toast('Fehler: '+error.message);return}const uid=data?.user?.id||'t'+Date.now();if(curSession){await supaClient.auth.setSession({access_token:curSession.access_token,refresh_token:curSession.refresh_token})}const{error:profErr}=await supaClient.from('profiles').upsert({id:uid,email:e,full_name:n,role:r},{onConflict:'id'});if(profErr)console.warn('Profile upsert warning:',profErr.message);
+const newMember={id:uid,name:n,email:e,role:r};teamMembers.push(newMember);saveData();renderAdmin();
 const modal=await showModal('Einladung erstellt',`<div class="invite-result"><div class="invite-result-label">Benutzer:</div><div style="font-weight:600;margin-bottom:12px">${n}</div><div class="invite-result-label">Passwort (einmalig):</div><div class="invite-result-pw">${tempPw}</div><div style="font-size:12px;color:var(--text2);margin-bottom:12px">Teile diesen Link und das temporäre Passwort dem Benutzer mit. Das Passwort sollte nach dem ersten Login geändert werden.</div><a href="mailto:${e}?subject=YEARS%20Livetracking%20Zugang&body=Hallo%20${encodeURIComponent(n)},%0A%0ADein%20Zugang%20für%20YEARS%20Livetracking%20wurde%20erstellt:%0A%0ABenutzer:%20${e}%0APasswort:%20${tempPw}%0A%0ABitte%20ändere%20dein%20Passwort%20nach%20dem%20ersten%20Login." style="display:inline-block;background:var(--mint);color:var(--text);padding:8px 14px;border-radius:var(--rs);text-decoration:none;font-size:13px;font-weight:600;margin-bottom:12px">E-Mail senden</a></div>`,[{label:'OK',cls:'modal-btn',val:'ok'}]);
 document.getElementById('invName').value='';document.getElementById('invEmail').value='';document.getElementById('invRole').value='mfa';toast('Einladung gesendet')}else{teamMembers.push({id:'t'+Date.now(),name:n,email:e,role:r});saveData();renderAdmin();toast(`${n} eingeladen`)}}
-async function removeTeamMember(id){const m=teamMembers.find(x=>x.id===id);if(!m)return;const r=await showModal('Mitglied entfernen?',`<p><strong>${m.name}</strong> wirklich entfernen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes')return;if(backendMode==='supabase'){const{error}=await supaClient.rpc('delete_team_member',{p_user_id:id});if(error){toast('Fehler: '+error.message);return}}
+async function removeTeamMember(id){const m=teamMembers.find(x=>x.id===id);if(!m)return;const r=await showModal('Mitglied entfernen?',`<p><strong>${m.name}</strong> wirklich entfernen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes')return;if(backendMode==='supabase'){const{error}=await supaClient.from('profiles').delete().eq('id',id);if(error){toast('Fehler: '+error.message);return}}
 teamMembers=teamMembers.filter(x=>x.id!==id);saveData();renderAdmin();toast(`${m.name} entfernt`)}
 async function changePassword(){if(backendMode!=='supabase'){toast('Passwortänderung nur in Supabase-Modus verfügbar');return}
 const pw=prompt('Neues Passwort:');if(!pw){return}
 const pw2=prompt('Passwort bestätigen:');if(!pw2||pw!==pw2){toast('Passwörter stimmen nicht überein');return}
-const{data,error}=await supaClient.rpc('change_own_password',{p_new_password:pw});if(error){toast('Fehler: '+error.message);return}
+const{data,error}=await supaClient.auth.updateUser({password:pw});if(error){toast('Fehler: '+error.message);return}
 toast('Passwort erfolgreich geändert')}
 async function resetAllData(){const r=await showModal('Daten zurücksetzen?','<p>Alle Patienten-, Team- und Einstellungsdaten werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>',[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Alles löschen',cls:'modal-btn-danger',val:'yes'}]);if(r==='yes'){localStorage.clear();location.reload()}}
 
