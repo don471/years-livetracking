@@ -1715,7 +1715,7 @@ if(isGhost){
 uid=data.user.id;
 // Restore admin session before RPC call
 if(curSession){await supaClient.auth.setSession({access_token:curSession.access_token,refresh_token:curSession.refresh_token})}
-await supaClient.rpc('delete_auth_user',{p_user_id:uid}).then(()=>{});
+await supaClient.rpc('delete_team_member',{p_user_id:uid}).then(()=>{});
 // Now create fresh
 const{data:d2,error:e2}=await supaClient.auth.signUp({email:e,password:tempPw,options:{data:{full_name:n,role:r},emailRedirectTo:siteUrl}});
 if(e2){toast('Fehler: '+e2.message);return}
@@ -1735,10 +1735,9 @@ const emailNote=emailSent?'<div style="font-size:12px;color:var(--green);margin-
 await showModal('Einladung erstellt',`<div class="invite-result"><div class="invite-result-label">Benutzer:</div><div style="font-weight:600;margin-bottom:8px">${n} (${e})</div>${emailNote}<div class="invite-result-label">Temporäres Passwort:</div><div class="invite-result-pw">${tempPw}</div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Der Benutzer muss zuerst die E-Mail bestätigen, dann kann er sich mit diesem Passwort einloggen.</div><div style="font-size:11px;color:var(--text2);background:var(--warm-100);padding:8px 10px;border-radius:var(--rs)">💡 Tipp: Teile das Passwort persönlich oder per Nachricht mit.</div></div>`,[{label:'OK',cls:'modal-btn',val:'ok'}]);
 document.getElementById('invName').value='';document.getElementById('invEmail').value='';document.getElementById('invRole').value='mfa';toast(`${n} eingeladen`)}else{if(teamMembers.find(m=>m.email.toLowerCase()===eLow)){toast('Diese E-Mail ist bereits im Team');return}teamMembers.push({id:'t'+Date.now(),name:n,email:e,role:r});saveData();renderAdmin();toast(`${n} eingeladen`)}}
 async function removeTeamMember(id){const m=teamMembers.find(x=>x.id===id);if(!m)return;const r=await showModal('Mitglied entfernen?',`<p><strong>${m.name}</strong> (${m.email}) wirklich entfernen?</p><p style="font-size:12px;color:var(--text2)">Der Benutzer wird komplett gelöscht und kann sich nicht mehr anmelden.</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes')return;if(backendMode==='supabase'){
-// Delete profile first
-const{error:profErr}=await supaClient.from('profiles').delete().eq('id',id);if(profErr){toast('Fehler beim Löschen: '+profErr.message);return}
-// Delete auth user via RPC (SECURITY DEFINER function)
-const{error:authErr}=await supaClient.rpc('delete_auth_user',{p_user_id:id});if(authErr)console.warn('Auth delete:',authErr.message);
+// Delete profile + auth user in one RPC call (SECURITY DEFINER bypasses RLS)
+const{error:delErr}=await supaClient.rpc('delete_team_member',{p_user_id:id});
+if(delErr){toast('Fehler beim Löschen: '+delErr.message);return}
 // Reload team from DB — single source of truth
 const{data:freshTeam}=await supaClient.from('profiles').select('*');
 if(freshTeam){teamMembers=freshTeam.map(t=>({id:t.id,name:t.full_name||t.email,email:t.email,role:t.role||'mfa',status:t.status||'active'}))}
