@@ -827,6 +827,11 @@ async function loadDataFromSupabase(){
   if(!supaClient||backendMode!=='supabase')return false;
   showSyncStatus('syncing');
   try{
+    // Load tracks FIRST (needed for patient track auto-assignment)
+    try{
+      const{data:trks}=await supaClient.from('tracks').select('*').order('sort_order');
+      if(trks&&trks.length){tracks=trks.map(t=>({id:t.id,name:t.name,color:t.color||'#85FFC3',rooms:t.rooms||[]}))}
+    }catch(e){console.warn('Tracks load skipped (table may not exist):',e.message)}
     // Load patients
     const{data:pats,error:pe}=await supaClient.from('patients').select('*').order('startzeit');
     if(pe)throw pe;
@@ -841,7 +846,13 @@ async function loadDataFromSupabase(){
         programmUmfang:p.programm_umfang||'',extraBuchungen:p.extra_buchungen||'',notizen:p.notizen||''
       }));
       patients.forEach(initPatTreatments);
-      patients.forEach((p,i)=>{if(!p.track&&tracks.length)p.track=tracks[i%tracks.length].id});
+      const needsTrack=patients.filter(p=>!p.track&&tracks.length);
+      patients.forEach((p,i)=>{if(!p.track&&tracks.length){p.track=tracks[i%tracks.length].id}});
+      // Persist auto-assigned tracks back to Supabase
+      if(needsTrack.length){
+        needsTrack.forEach(p=>{supaClient.from('patients').update({track:p.track}).eq('id',p.id).then(()=>{})});
+        console.log('Auto-assigned tracks to',needsTrack.length,'patients and saved to Supabase');
+      }
     }
     // Load room config
     const{data:rooms}=await supaClient.from('rooms').select('*').order('sort_order');
@@ -861,11 +872,6 @@ async function loadDataFromSupabase(){
     // Load treatments
     const{data:txs}=await supaClient.from('treatments').select('*').order('sort_order');
     if(txs&&txs.length){treatments=txs.map(t=>({id:t.id,name:t.name,room:t.room_id,order:t.sort_order}))}
-    // Load tracks
-    try{
-      const{data:trks}=await supaClient.from('tracks').select('*').order('sort_order');
-      if(trks&&trks.length){tracks=trks.map(t=>({id:t.id,name:t.name,color:t.color||'#85FFC3',rooms:t.rooms||[]}))}
-    }catch(e){console.warn('Tracks load skipped (table may not exist):',e.message)}
     // Load settings (nfcTags, suites, timeSlots, txStatuses)
     await loadSettingsFromSupabase();
     showSyncStatus('synced');
