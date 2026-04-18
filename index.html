@@ -834,13 +834,14 @@ async function loadDataFromSupabase(){
       patients=pats.map(p=>({
         id:p.id,pid:p.pid,vorname:p.vorname,nachname:p.nachname,
         program:p.program,startzeit:p.startzeit,mfa:p.mfa,arzt:p.arzt,
-        suite:p.suite,currentLocation:p.current_location,
+        suite:p.suite,track:p.track||null,currentLocation:p.current_location,
         locationSince:p.location_since?new Date(p.location_since).getTime():null,
         status:p.status||'not-arrived',
         journey:p.journey||[],treatments:p.treatments||{},
         programmUmfang:p.programm_umfang||'',extraBuchungen:p.extra_buchungen||'',notizen:p.notizen||''
       }));
       patients.forEach(initPatTreatments);
+      patients.forEach((p,i)=>{if(!p.track&&tracks.length)p.track=tracks[i%tracks.length].id});
     }
     // Load room config
     const{data:rooms}=await supaClient.from('rooms').select('*').order('sort_order');
@@ -860,6 +861,11 @@ async function loadDataFromSupabase(){
     // Load treatments
     const{data:txs}=await supaClient.from('treatments').select('*').order('sort_order');
     if(txs&&txs.length){treatments=txs.map(t=>({id:t.id,name:t.name,room:t.room_id,order:t.sort_order}))}
+    // Load tracks
+    try{
+      const{data:trks}=await supaClient.from('tracks').select('*').order('sort_order');
+      if(trks&&trks.length){tracks=trks.map(t=>({id:t.id,name:t.name,color:t.color||'#85FFC3',rooms:t.rooms||[]}))}
+    }catch(e){console.warn('Tracks load skipped (table may not exist):',e.message)}
     // Load settings (nfcTags, suites, timeSlots, txStatuses)
     await loadSettingsFromSupabase();
     showSyncStatus('synced');
@@ -874,7 +880,7 @@ async function savePatientToSupabase(p){
     const{error}=await supaClient.from('patients').upsert({
       id:p.id,pid:p.pid,vorname:p.vorname,nachname:p.nachname,
       program:p.program,startzeit:p.startzeit,mfa:p.mfa,arzt:p.arzt,
-      suite:p.suite,current_location:p.currentLocation,
+      suite:p.suite,track:p.track||null,current_location:p.currentLocation,
       location_since:p.locationSince?new Date(p.locationSince).toISOString():null,
       status:pStatus(p),journey:p.journey,treatments:p.treatments,
       programm_umfang:p.programmUmfang||'',extra_buchungen:p.extraBuchungen||'',notizen:p.notizen||''
@@ -888,11 +894,13 @@ async function saveAllToSupabase(){
   if(!supaClient||backendMode!=='supabase')return;
   showSyncStatus('syncing');
   try{
+    // Sync tracks first (patients reference tracks)
+    await saveTracksToSupabase();
     // Sync patients
     const rows=patients.map(p=>({
       id:p.id,pid:p.pid,vorname:p.vorname,nachname:p.nachname,
       program:p.program,startzeit:p.startzeit,mfa:p.mfa,arzt:p.arzt,
-      suite:p.suite,current_location:p.currentLocation,
+      suite:p.suite,track:p.track||null,current_location:p.currentLocation,
       location_since:p.locationSince?new Date(p.locationSince).toISOString():null,
       status:pStatus(p),journey:p.journey,treatments:p.treatments,
       programm_umfang:p.programmUmfang||'',extra_buchungen:p.extraBuchungen||'',notizen:p.notizen||''
@@ -930,6 +938,19 @@ async function saveTreatmentsToSupabase(){
   const toDelete=(existing||[]).filter(t=>!localIds.has(t.id)).map(t=>t.id);
   if(toDelete.length){await supaClient.from('treatments').delete().in('id',toDelete)}
   if(txRows.length){const{error}=await supaClient.from('treatments').upsert(txRows,{onConflict:'id'});if(error)throw error}
+}
+
+async function saveTracksToSupabase(){
+  if(!supaClient||backendMode!=='supabase')return;
+  try{
+    const trackRows=tracks.map((t,i)=>({id:t.id,name:t.name,color:t.color||'#85FFC3',rooms:t.rooms||[],sort_order:i}));
+    // Get existing track IDs
+    const{data:existing}=await supaClient.from('tracks').select('id');
+    const localIds=new Set(trackRows.map(t=>t.id));
+    const toDelete=(existing||[]).filter(t=>!localIds.has(t.id)).map(t=>t.id);
+    if(toDelete.length){await supaClient.from('tracks').delete().in('id',toDelete)}
+    if(trackRows.length){const{error}=await supaClient.from('tracks').upsert(trackRows,{onConflict:'id'});if(error)throw error}
+  }catch(e){console.warn('Tracks sync skipped (table may not exist):',e.message)}
 }
 
 async function saveSettingsToSupabase(){
@@ -985,6 +1006,9 @@ function setupRealtimeSync(){
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'profiles'},payload=>{
       handleRealtimeProfileChange(payload)
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'tracks'},payload=>{
+      handleRealtimeTrackChange(payload)
     })
     .on('postgres_changes',{event:'*',schema:'public',table:'app_settings'},payload=>{
       handleRealtimeSettingsChange(payload)
@@ -1060,6 +1084,22 @@ function handleRealtimeSettingsChange(payload){
   renderAll()
 }
 
+function handleRealtimeTrackChange(payload){
+  const row=payload.new;
+  if(payload.eventType==='DELETE'){
+    const oldId=payload.old&&payload.old.id;
+    if(!oldId)return;
+    tracks=tracks.filter(t=>t.id!==oldId);
+  }else if(row){
+    const idx=tracks.findIndex(t=>t.id===row.id);
+    const mapped={id:row.id,name:row.name,color:row.color||'#85FFC3',rooms:row.rooms||[]};
+    if(idx>=0)tracks[idx]=mapped;
+    else tracks.push(mapped);
+    tracks.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  }
+  renderAll()
+}
+
 // ── Config Polling Fallback (rooms/treatments/profiles/settings every 10s) ──
 let configPollTimer=null;
 function startConfigPolling(){
@@ -1106,6 +1146,18 @@ function startConfigPolling(){
           renderAll()
         }
       }
+      // Poll tracks
+      try{
+        const{data:trks}=await supaClient.from('tracks').select('*').order('sort_order');
+        if(trks){
+          const newHash=trks.map(t=>t.id+t.name+t.color+JSON.stringify(t.rooms)+t.sort_order).join('|');
+          const curHash=tracks.map(t=>t.id+t.name+t.color+JSON.stringify(t.rooms)).join('|');
+          if(newHash!==curHash){
+            tracks=trks.map(t=>({id:t.id,name:t.name,color:t.color||'#85FFC3',rooms:t.rooms||[]}));
+            renderAll()
+          }
+        }
+      }catch(e){}
       // Poll app_settings
       const{data:settings}=await supaClient.from('app_settings').select('*');
       if(settings&&settings.length){
@@ -1136,7 +1188,7 @@ function handleRealtimePatientChange(payload){
   const mapped={
     id:row.id,pid:row.pid,vorname:row.vorname,nachname:row.nachname,
     program:row.program,startzeit:row.startzeit,mfa:row.mfa,arzt:row.arzt,
-    suite:row.suite,currentLocation:row.current_location,
+    suite:row.suite,track:row.track||null,currentLocation:row.current_location,
     locationSince:row.location_since?new Date(row.location_since).getTime():null,
     status:row.status||'not-arrived',
     journey:row.journey||[],treatments:row.treatments||{},
@@ -1671,6 +1723,7 @@ CREATE TABLE IF NOT EXISTS patients (
   programm_umfang TEXT DEFAULT '',
   extra_buchungen TEXT DEFAULT '',
   notizen TEXT DEFAULT '',
+  track TEXT REFERENCES tracks(id),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -1680,6 +1733,15 @@ CREATE TABLE IF NOT EXISTS treatments (
   name TEXT NOT NULL,
   room_id TEXT REFERENCES rooms(id),
   sort_order INT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS tracks (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  color TEXT DEFAULT '#85FFC3',
+  rooms JSONB DEFAULT '[]'::jsonb,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS tracking_logs (
@@ -1697,6 +1759,7 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE treatments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tracks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tracking_logs ENABLE ROW LEVEL SECURITY;
 
 -- Policies (allow all authenticated users)
@@ -1704,6 +1767,7 @@ CREATE POLICY "auth_read" ON profiles FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth_read" ON rooms FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth_all" ON patients FOR ALL TO authenticated USING (true);
 CREATE POLICY "auth_read" ON treatments FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_read" ON tracks FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth_all" ON tracking_logs FOR ALL TO authenticated USING (true);
 
 -- Admin-only write for config tables
@@ -1711,11 +1775,14 @@ CREATE POLICY "admin_write" ON rooms FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 CREATE POLICY "admin_write" ON treatments FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "admin_write" ON tracks FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 CREATE POLICY "admin_write" ON profiles FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- Enable Realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE patients;
+ALTER PUBLICATION supabase_realtime ADD TABLE tracks;
 ALTER PUBLICATION supabase_realtime ADD TABLE tracking_logs;</div>`;
   h+=`<button class="admin-btn" onclick="copySQL()" style="margin-top:8px">${ico('check','ico-sm')} SQL kopieren</button>`;
   h+=`</div></div></div>`;
@@ -1769,6 +1836,8 @@ async function pushLocalToSupabase(){
     // Push treatments
     const txRows=treatments.map(t=>({id:t.id,name:t.name,room_id:t.room,sort_order:t.order}));
     await supaClient.from('treatments').upsert(txRows,{onConflict:'id'});
+    // Push tracks
+    await saveTracksToSupabase();
     // Push patients
     await saveAllToSupabase();
     showSyncStatus('synced');
