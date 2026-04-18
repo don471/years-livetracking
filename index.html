@@ -1484,7 +1484,7 @@ if(activeTrackFilter==='all'){
     const activePauses=PAUSES.filter(pr=>patients.some(pat=>pat.track===t.id&&pat.currentLocation===pr.id));
     const allRooms=[...trackStations,...activePauses.filter(pr=>!trackStations.find(s=>s.id===pr.id))];
     const cnt=patients.filter(p=>p.track===t.id&&p.currentLocation&&pStatus(p)!=='done'&&pStatus(p)!=='not-arrived').length;
-    h+=`<div class="dash-section-inline"><div class="dash-section-title"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.color}"></span>${t.name}<span style="font-weight:400;color:var(--text2);font-size:11px;text-transform:none;letter-spacing:0">${cnt} aktiv</span></div>`;
+    h+=`<div class="dash-section-inline" data-track="${t.id}"><div class="dash-section-title"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.color}"></span>${t.name}<span style="font-weight:400;color:var(--text2);font-size:11px;text-transform:none;letter-spacing:0">${cnt} aktiv</span></div>`;
     h+=`<div class="dash-grid">`;
     allRooms.forEach(loc=>{h+=renderDashLocCol(loc,t.id)});
     h+=`</div></div>`;
@@ -1507,7 +1507,20 @@ function dashDragStart(e,pid){dragPatientId=pid;e.dataTransfer.effectAllowed='mo
 function dashDragEnd(e){e.target.classList.remove('dragging');document.querySelectorAll('.dcol.drag-over').forEach(el=>el.classList.remove('drag-over'));dragPatientId=null}
 function dashDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';const c=e.target.closest('.dcol');if(c)c.classList.add('drag-over')}
 function dashDragLeave(e){const c=e.target.closest('.dcol');if(c)c.classList.remove('drag-over')}
-async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.dcol.drag-over').forEach(el=>el.classList.remove('drag-over'));const pid=e.dataTransfer.getData('text/plain')||dragPatientId;if(!pid)return;await transitionPatient(pid,locId)}
+async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.dcol.drag-over').forEach(el=>el.classList.remove('drag-over'));const pid=e.dataTransfer.getData('text/plain')||dragPatientId;if(!pid)return;
+  const p=patients.find(x=>x.id===pid);if(!p)return;
+  // Detect target track from section
+  const dropEl=e.target.closest('.dash-section-inline');
+  const targetTrack=dropEl?dropEl.dataset.track:null;
+  if(targetTrack&&p.track&&targetTrack!==p.track){
+    const oldT=tracks.find(x=>x.id===p.track);const newT=tracks.find(x=>x.id===targetTrack);
+    const fromL=oldT?oldT.name:'—';const toL=newT?newT.name:'—';
+    const r=await showModal('Track wechseln?',`<p><strong>${p.vorname} ${p.nachname}</strong></p><div style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:15px"><span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:16px;background:${oldT?oldT.color+'22':'#f0f0f0'};border:2px solid ${oldT?oldT.color:'var(--border)'}">${oldT?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+oldT.color+'"></span>':''}${fromL}</span><span style="color:var(--text2)">→</span><span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:16px;background:${newT?newT.color+'22':'#f0f0f0'};border:2px solid ${newT?newT.color:'var(--border)'}">${newT?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+newT.color+'"></span>':''}${toL}</span></div><p style="font-size:13px;color:var(--text2)">Die Raumreihenfolge ändert sich entsprechend.</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Wechseln',cls:'modal-btn-confirm',val:'yes'}]);
+    if(r!=='yes')return;
+    p.journey.push({type:'track-change',from:p.track,to:targetTrack,at:Date.now()});
+    p.track=targetTrack;saveData();
+  }
+  await transitionPatient(pid,locId)}
 let touchDragTimer=null,touchStartX=0,touchStartY=0,touchDragActive=false,touchSrcEl=null;
 function touchDragStart(e,pid){
   const t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY;touchDragActive=false;touchSrcEl=e.target.closest('.dchip');
@@ -1548,7 +1561,22 @@ function touchDragEnd(e){
     touchDragEl.remove();touchDragEl=null;
     const t=e.changedTouches[0];
     const below=document.elementFromPoint(t.clientX,t.clientY);
-    if(below){const c=below.closest('.dcol');if(c&&dragPatientId){const lid=c.dataset.loc;if(lid)transitionPatient(dragPatientId,lid)}}
+    if(below){const c=below.closest('.dcol');if(c&&dragPatientId){const lid=c.dataset.loc;if(lid){
+      const p=patients.find(x=>x.id===dragPatientId);
+      const sec=c.closest('.dash-section-inline');
+      const targetTrack=sec?sec.dataset.track:null;
+      if(p&&targetTrack&&p.track&&targetTrack!==p.track){
+        const pid=dragPatientId;
+        (async()=>{
+          const oldT=tracks.find(x=>x.id===p.track);const newT=tracks.find(x=>x.id===targetTrack);
+          const r=await showModal('Track wechseln?',`<p><strong>${p.vorname} ${p.nachname}</strong></p><div style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:15px"><span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:16px;background:${oldT?oldT.color+'22':'#f0f0f0'};border:2px solid ${oldT?oldT.color:'var(--border)'}">${oldT?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+oldT.color+'"></span>':''}${oldT?oldT.name:'—'}</span><span style="color:var(--text2)">→</span><span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:16px;background:${newT?newT.color+'22':'#f0f0f0'};border:2px solid ${newT?newT.color:'var(--border)'}">${newT?'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+newT.color+'"></span>':''}${newT?newT.name:'—'}</span></div>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Wechseln',cls:'modal-btn-confirm',val:'yes'}]);
+          if(r!=='yes')return;
+          p.journey.push({type:'track-change',from:p.track,to:targetTrack,at:Date.now()});
+          p.track=targetTrack;saveData();
+          await transitionPatient(pid,lid);
+        })();
+      } else {transitionPatient(dragPatientId,lid)}
+    }}}
   }
   touchDragEl=null;touchDragActive=false;touchSrcEl=null;
   document.querySelectorAll('.dchip.dragging,.dchip[style*="opacity"]').forEach(el=>{el.classList.remove('dragging');el.style.opacity=''});
