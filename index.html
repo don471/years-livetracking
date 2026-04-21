@@ -966,10 +966,21 @@ function mergeAirtablePatients(atPatients){
         });
       }
       existing.airtableRoom=at.airtable_room||'';
+      existing.airtableRoomId=at.airtable_room_id||'';
+      existing.airtableLastRoom=at.airtable_last_room||'';
       existing.airtableStatus=at.airtable_status||'';
+      if(at.actual_start)existing.actualStart=at.actual_start;
+      // Default to Track 1 if patient has no track assigned
+      if(!existing.track&&tracks.length)existing.track=tracks[0].id;
+      // Update location from Airtable if patient hasn't been manually moved
+      if(at.airtable_room_id&&!existing.currentLocation){
+        existing.currentLocation=at.airtable_room_id;
+        existing.status='in-treatment';
+      }
       updateCount++;
     }else{
       // NEW: Create patient from Airtable data
+      const defaultTrack=tracks.length?tracks[0].id:null;
       const newPat={
         id:'at-'+at.airtable_record_id,
         airtableRecordId:at.airtable_record_id,
@@ -978,12 +989,15 @@ function mergeAirtablePatients(atPatients){
         program:at.program,programmUmfang:at.programm_umfang||'',
         extraBuchungen:at.extra_buchungen||'',
         startzeit:at.startzeit,
-        track:tracks.length?tracks[newCount%tracks.length].id:null,
-        currentLocation:null,locationSince:null,
-        status:'not-arrived',
+        track:defaultTrack,
+        currentLocation:at.airtable_room_id||null,
+        locationSince:at.actual_start||null,
+        status:at.airtable_room_id?'in-treatment':'not-arrived',
         journey:[],
         treatments:at.treatments||{},
         airtableRoom:at.airtable_room||'',
+        airtableRoomId:at.airtable_room_id||'',
+        airtableLastRoom:at.airtable_last_room||'',
         airtableStatus:at.airtable_status||'',
         notizen:''
       };
