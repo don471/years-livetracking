@@ -1780,12 +1780,12 @@ if(unassignedPats.length){
   h+=`</div>`;
 }
 
-// ── Patient chip bar: compact today's patients (track-filtered) ──
+// ── Patient chip bar: only on "Alle" view (track views show patients in room cards) ──
+if(activeTrackFilter==='all'){
 const chipPatients=patients.filter(p=>{
   const s=pStatus(p);
   if(s==='done')return false;
-  if(!p.track)return false; // unassigned shown above
-  if(activeTrackFilter!=='all'&&p.track!==activeTrackFilter)return false;
+  if(!p.track)return false;
   return true;
 });
 const chipOrder={'not-arrived':0,'waiting':1,'pause':2,'in-room':3};
@@ -1806,6 +1806,7 @@ if(chipPatients.length){
     h+=`<div class="${cls}" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${p.vorname} ${p.nachname?p.nachname[0]+'.':''}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
   });
   h+=`</div>`;
+}
 }
 
 // ── Done chip bar: finished patients (track-filtered + unassigned) ──
