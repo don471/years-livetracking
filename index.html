@@ -908,7 +908,8 @@ async function loadDataFromSupabase(){
 // AIRTABLE SYNC (READ-ONLY)
 // ═══════════════════════════════════════
 const AIRTABLE_SYNC_URL_KEY='years_airtable_sync_url';
-function getAirtableSyncUrl(){return localStorage.getItem(AIRTABLE_SYNC_URL_KEY)||''}
+const AIRTABLE_SYNC_URL_DEFAULT='https://kghyycbzgovewhnphbzl.supabase.co/functions/v1/sync-airtable';
+function getAirtableSyncUrl(){return localStorage.getItem(AIRTABLE_SYNC_URL_KEY)||AIRTABLE_SYNC_URL_DEFAULT}
 function setAirtableSyncUrl(url){localStorage.setItem(AIRTABLE_SYNC_URL_KEY,url)}
 
 // Treatment field name → livetracking treatment ID mapping
