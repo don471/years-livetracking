@@ -203,6 +203,18 @@ body.panel-open{overflow:hidden}
 .track-chip:active{transform:scale(.95)}
 .track-chip.on{background:var(--warm-900);color:var(--mint);border-color:var(--warm-900)}
 .track-chip .track-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+/* ── PATIENT CHIP BAR ── */
+.pat-chip-bar{display:flex;gap:6px;padding:8px 0 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;align-items:center;min-height:0;transition:all .2s}
+.pat-chip-bar:empty{display:none;padding:0;min-height:0}
+.pat-chip-bar-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);white-space:nowrap;flex-shrink:0;margin-right:2px}
+.pat-mini{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:16px;font-size:12px;font-weight:500;background:var(--warm-200);color:var(--text);border:1.5px solid var(--border);cursor:grab;white-space:nowrap;transition:all .15s;flex-shrink:0;user-select:none;-webkit-user-select:none}
+.pat-mini:active{cursor:grabbing;transform:scale(.95)}
+.pat-mini.dragging{opacity:.4}
+.pat-mini .pm-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.pat-mini .pm-time{font-size:10px;color:var(--text2);font-weight:400}
+.pat-mini.pm-unassigned{background:var(--orange-bg);border-color:var(--orange);border-style:dashed}
+.pat-mini.pm-waiting{background:var(--yellow-bg);border-color:var(--yellow)}
+.pat-mini.pm-active{background:var(--warm-100);border-color:var(--warm-300)}
 .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:stretch}
 @media(max-width:1100px){.dash-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:768px){.dash-grid{grid-template-columns:repeat(2,1fr)}}
@@ -1656,6 +1668,34 @@ tracks.forEach(t=>{
 });
 h+=`</div>`;
 
+// ── Patient chip bar: compact today's patients ──
+const chipPatients=patients.filter(p=>{
+  const s=pStatus(p);
+  if(s==='done')return false; // hide finished
+  if(activeTrackFilter!=='all'&&p.track!==activeTrackFilter)return false;
+  return true;
+});
+// Sort: not-arrived first, then waiting, then in-room/pause
+const chipOrder={'not-arrived':0,'waiting':1,'pause':2,'in-room':3};
+chipPatients.sort((a,b)=>(chipOrder[pStatus(a)]??9)-(chipOrder[pStatus(b)]??9));
+if(chipPatients.length){
+  h+=`<div class="pat-chip-bar"><span class="pat-chip-bar-label">Patienten</span>`;
+  chipPatients.forEach(p=>{
+    const s=pStatus(p);
+    const trk=tracks.find(t=>t.id===p.track);
+    const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
+    let cls='pat-mini';
+    if(s==='not-arrived')cls+=' pm-unassigned';
+    else if(s==='waiting')cls+=' pm-waiting';
+    else cls+=' pm-active';
+    const zeit=p.startzeit||'';
+    const loc=p.currentLocation?locName(p.currentLocation):'';
+    const sub=s==='not-arrived'?zeit:(loc||zeit);
+    h+=`<div class="${cls}" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${p.vorname} ${p.nachname?p.nachname[0]+'.':''}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
+  });
+  h+=`</div>`;
+}
+
 if(activeTrackFilter==='all'){
   // === ALLE: Tracks als gestapelte Sektionen ===
   tracks.forEach(t=>{
@@ -1703,6 +1743,22 @@ async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.
   }
   await transitionPatient(pid,locId)}
 let touchDragTimer=null,touchStartX=0,touchStartY=0,touchDragActive=false,touchSrcEl=null,autoScrollRAF=null;
+function chipTouchStart(e,pid){
+  const t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY;touchDragActive=false;touchSrcEl=e.target.closest('.pat-mini');
+  dragPatientId=pid;
+  if(touchDragTimer)clearTimeout(touchDragTimer);
+  touchDragTimer=setTimeout(()=>{
+    if(dragPatientId!==pid||!touchSrcEl)return;
+    touchDragActive=true;
+    if(navigator.vibrate)navigator.vibrate(30);
+    touchDragEl=touchSrcEl.cloneNode(true);
+    touchDragEl.style.cssText='position:fixed;z-index:999;pointer-events:none;opacity:.85;transform:scale(1.1);box-shadow:0 6px 20px rgba(0,0,0,.2);border-radius:16px;transition:none';
+    touchDragEl.style.left=(t.clientX-touchSrcEl.offsetWidth/2)+'px';
+    touchDragEl.style.top=(t.clientY-20)+'px';
+    document.body.appendChild(touchDragEl);
+    touchSrcEl.classList.add('dragging');
+  },200)
+}
 function touchDragStart(e,pid){
   const t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY;touchDragActive=false;touchSrcEl=e.target.closest('.dchip');
   dragPatientId=pid;
@@ -1749,7 +1805,7 @@ function touchDragMove(e){
 function touchDragEnd(e){
   if(autoScrollRAF){cancelAnimationFrame(autoScrollRAF);autoScrollRAF=null}
   if(touchDragTimer){clearTimeout(touchDragTimer);touchDragTimer=null}
-  if(touchSrcEl)touchSrcEl.style.opacity='';
+  if(touchSrcEl){touchSrcEl.style.opacity='';touchSrcEl.classList.remove('dragging')}
   if(touchDragEl&&touchDragActive){
     touchDragEl.remove();touchDragEl=null;
     const t=e.changedTouches[0];
