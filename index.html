@@ -1075,13 +1075,16 @@ function mergeAirtablePatients(atPatients){
   }
 }
 
-// Periodic Airtable refresh (every 2 minutes)
+// Periodic Airtable refresh (every 15 seconds for near-realtime updates)
 let airtableSyncInterval=null;
+const AIRTABLE_SYNC_INTERVAL=15000; // 15s — Airtable API allows ~5 req/s
 function startAirtableSync(){
   if(airtableSyncInterval)clearInterval(airtableSyncInterval);
   airtableSyncInterval=setInterval(()=>{
-    fetchAirtablePatients().then(ok=>{if(ok)console.log('Airtable periodic sync complete')});
-  },120000);
+    fetchAirtablePatients().then(ok=>{
+      if(ok){console.log('Airtable periodic sync complete');renderDashboard();renderPatients?.()}
+    });
+  },AIRTABLE_SYNC_INTERVAL);
 }
 
 async function savePatientToSupabase(p){
