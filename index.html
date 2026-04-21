@@ -643,7 +643,10 @@ body.panel-open{overflow:hidden}
     <div style="padding:0 24px 12px">
       <button class="admin-btn primary" style="width:100%;padding:14px;font-size:15px;border-radius:var(--r)" onclick="doLogin()">Anmelden</button>
     </div>
-    <div style="text-align:center;padding:8px 24px 24px">
+    <div style="text-align:center;padding:8px 24px 4px">
+      <button style="background:none;border:none;color:var(--warm-500);font-size:13px;cursor:pointer;text-decoration:underline" onclick="showResetPassword()">Passwort vergessen?</button>
+    </div>
+    <div style="text-align:center;padding:4px 24px 24px">
       <button style="background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;text-decoration:underline" onclick="skipLogin()">Demo-Modus (ohne Login)</button>
     </div>
   </div>
@@ -749,18 +752,21 @@ async function initSupabase(){
     supaClient=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{detectSessionFromUrl:true,flowType:'implicit'}});
     // Handle email confirmation callback (tokens in URL hash)
     const hash=window.location.hash;
-    if(hash&&(hash.includes('access_token')||hash.includes('type=signup')||hash.includes('type=email'))){
+    if(hash&&(hash.includes('access_token')||hash.includes('type=signup')||hash.includes('type=email')||hash.includes('type=recovery'))){
       const{data:{session:cbSession},error:cbErr}=await supaClient.auth.getSession();
       if(cbSession){
         supaUser=cbSession.user;backendMode='supabase';
         supaClient.from('profiles').update({status:'active'}).eq('id',cbSession.user.id).then(()=>{});
         window.history.replaceState(null,'',window.location.pathname+window.location.search);
-        // First login via email confirmation — prompt to set password
+        const isReset=hash.includes('type=recovery');
+        // Password reset or first login — prompt to set password
         setTimeout(async()=>{
-          const pw=await showModal('Willkommen! Passwort festlegen',`<p style="font-size:13px;color:var(--text2);margin-bottom:12px">Dein Account wurde bestätigt. Bitte lege jetzt ein Passwort fest, mit dem du dich künftig anmelden kannst.</p><input class="admin-input" id="modalSetPw" type="password" placeholder="Neues Passwort (min. 6 Zeichen)" style="margin-bottom:8px"><input class="admin-input" id="modalSetPw2" type="password" placeholder="Passwort wiederholen">`,[{label:'Später',cls:'modal-btn-cancel',val:'skip'},{label:'Speichern',cls:'modal-btn-confirm',val:'_pw'}]);
+          const title=isReset?'Neues Passwort festlegen':'Willkommen! Passwort festlegen';
+          const desc=isReset?'Bitte lege jetzt ein neues Passwort fest.':'Dein Account wurde bestätigt. Bitte lege jetzt ein Passwort fest, mit dem du dich künftig anmelden kannst.';
+          const pw=await showModal(title,`<p style="font-size:13px;color:var(--text2);margin-bottom:12px">${desc}</p><input class="admin-input" id="modalSetPw" type="password" placeholder="Neues Passwort (min. 6 Zeichen)" style="margin-bottom:8px"><input class="admin-input" id="modalSetPw2" type="password" placeholder="Passwort wiederholen">`,[{label:'Später',cls:'modal-btn-cancel',val:'skip'},{label:'Speichern',cls:'modal-btn-confirm',val:'_pw'}]);
           if(pw&&pw!=='skip'&&pw.length>=6){
             const{error}=await supaClient.auth.updateUser({password:pw});
-            if(error){toast('Fehler: '+error.message)}else{toast('Passwort gespeichert!')}
+            if(error){toast('Fehler: '+error.message)}else{toast(isReset?'Neues Passwort gespeichert!':'Passwort gespeichert!')}
           }else if(pw&&pw!=='skip'){toast('Passwort muss mindestens 6 Zeichen haben')}
         },500);
         return true;
@@ -798,6 +804,20 @@ async function doLogin(){
     setupRealtimeSync();
     startConfigPolling();
   }catch(e){errEl.textContent='Verbindungsfehler: '+e.message;errEl.style.display=''}
+}
+
+async function showResetPassword(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const errEl=document.getElementById('loginError');
+  if(!email){errEl.textContent='Bitte zuerst deine E-Mail oben eingeben.';errEl.style.display='';return}
+  if(!supaClient){errEl.textContent='Kein Backend konfiguriert.';errEl.style.display='';return}
+  errEl.style.display='none';
+  try{
+    const redirectUrl=window.location.origin+window.location.pathname;
+    const{error}=await supaClient.auth.resetPasswordForEmail(email,{redirectTo:redirectUrl});
+    if(error){errEl.textContent='Fehler: '+error.message;errEl.style.display='';return}
+    await showModal('E-Mail gesendet',`<p style="font-size:14px;color:var(--text2)">Eine E-Mail zum Zurücksetzen des Passworts wurde an <strong>${email}</strong> gesendet. Bitte prüfe dein Postfach und klicke auf den Link.</p>`,[{label:'OK',cls:'modal-btn-confirm',val:'ok'}]);
+  }catch(e){errEl.textContent='Fehler: '+e.message;errEl.style.display=''}
 }
 
 function skipLogin(){
