@@ -1601,7 +1601,6 @@ h+=fR('Programm',`<div class="field-static">${p.program||'—'}</div>`);
 h+=fR('Programm Umfang',`<div class="field-static">${p.programmUmfang||'—'}</div>`);
 h+=fR('Extra Buchungen',`<div class="field-static">${p.extraBuchungen||'—'}</div>`);
 h+=fR('Arzt',`<div class="field-static">${(p.arzt&&!p.arzt.startsWith('rec'))?p.arzt:'—'}</div>`);
-h+=fR('MFA',`<div class="field-static">${(p.mfa&&!p.mfa.startsWith('rec'))?p.mfa:'—'}</div>`);
 h+=fR('Startzeit',zeitDisplay||`<div class="field-static">${sollZeit||'—'}</div>`);
 h+=fR('Airtable Status',`<div class="field-static">${atStatus||'—'}</div>`);
 h+=fR('Airtable Raum',`<div class="field-static" style="display:flex;align-items:center;gap:6px">${atRoom||'—'}${atRoom&&ltRoom!=='—'&&atRoom!==ltRoom?`<span style="color:var(--text2)">→</span><span style="color:var(--orange)">LT: ${ltRoom}</span>`:''}</div>`);
@@ -1611,6 +1610,7 @@ h+=`<div style="padding:8px 0 2px;font-size:10px;font-weight:700;text-transform:
 h+=fR('YEARS-ID',`<div class="field-static" style="font-family:monospace">${p.id}</div>`);
 h+=trackSelectHtml;
 h+=fRS(pid,'suite','Suite',p.suite,suites);
+h+=fRS(pid,'mfa','MFA',p.mfa||'',mfaOpts);
 h+=fRI(pid,'notizen','Notizen',p.notizen||'');
 h+=`</div><div class="field-save-bar" id="fieldSaveBar"><button class="admin-btn" onclick="cancelPatEdits('${pid}')">Abbrechen</button><button class="admin-btn primary" onclick="confirmPatEdits('${pid}')">Änderungen speichern</button></div></div>`;
 // TAB: VERWEILDAUER
