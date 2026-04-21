@@ -1565,7 +1565,7 @@ async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.
     p.track=targetTrack;saveData();
   }
   await transitionPatient(pid,locId)}
-let touchDragTimer=null,touchStartX=0,touchStartY=0,touchDragActive=false,touchSrcEl=null;
+let touchDragTimer=null,touchStartX=0,touchStartY=0,touchDragActive=false,touchSrcEl=null,autoScrollRAF=null;
 function touchDragStart(e,pid){
   const t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY;touchDragActive=false;touchSrcEl=e.target.closest('.dchip');
   dragPatientId=pid;
@@ -1582,6 +1582,15 @@ function touchDragStart(e,pid){
     touchSrcEl.style.opacity='0.3';
   },250)
 }
+function touchAutoScroll(cy){
+  if(autoScrollRAF){cancelAnimationFrame(autoScrollRAF);autoScrollRAF=null}
+  const edge=60;const vh=window.innerHeight;let speed=0;
+  if(cy<edge)speed=-Math.round(12*(1-cy/edge));
+  else if(cy>vh-edge)speed=Math.round(12*(1-(vh-cy)/edge));
+  if(speed===0)return;
+  function step(){window.scrollBy(0,speed);autoScrollRAF=requestAnimationFrame(step)}
+  autoScrollRAF=requestAnimationFrame(step);
+}
 function touchDragMove(e){
   const t=e.touches[0];
   const dx=Math.abs(t.clientX-touchStartX),dy=Math.abs(t.clientY-touchStartY);
@@ -1591,6 +1600,8 @@ function touchDragMove(e){
   e.preventDefault();
   touchDragEl.style.left=(t.clientX-touchDragEl.offsetWidth/2)+'px';
   touchDragEl.style.top=(t.clientY-20)+'px';
+  // Auto-scroll when near top/bottom edge
+  touchAutoScroll(t.clientY);
   // Highlight drop target
   document.querySelectorAll('.dcol.drag-over').forEach(el=>el.classList.remove('drag-over'));
   touchDragEl.style.display='none';
@@ -1599,6 +1610,7 @@ function touchDragMove(e){
   if(below){const c=below.closest('.dcol');if(c)c.classList.add('drag-over')}
 }
 function touchDragEnd(e){
+  if(autoScrollRAF){cancelAnimationFrame(autoScrollRAF);autoScrollRAF=null}
   if(touchDragTimer){clearTimeout(touchDragTimer);touchDragTimer=null}
   if(touchSrcEl)touchSrcEl.style.opacity='';
   if(touchDragEl&&touchDragActive){
