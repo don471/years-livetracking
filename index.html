@@ -864,7 +864,8 @@ async function loadDataFromSupabase(){
         locationSince:p.location_since?new Date(p.location_since).getTime():null,
         status:p.status||'not-arrived',
         journey:p.journey||[],treatments:p.treatments||{},
-        programmUmfang:p.programm_umfang||'',extraBuchungen:p.extra_buchungen||'',notizen:p.notizen||''
+        programmUmfang:p.programm_umfang||'',extraBuchungen:p.extra_buchungen||'',notizen:p.notizen||'',
+      airtableRecordId:p.airtable_record_id||null,airtableRoom:p.airtable_room||'',airtableStatus:p.airtable_status||''
       }));
       patients.forEach(initPatTreatments);
       const needsTrack=patients.filter(p=>!p.track&&tracks.length);
@@ -902,6 +903,113 @@ async function loadDataFromSupabase(){
   }catch(e){console.error('Load from Supabase failed:',e);showSyncStatus('error');return false}
 }
 
+
+// ═══════════════════════════════════════
+// AIRTABLE SYNC (READ-ONLY)
+// ═══════════════════════════════════════
+const AIRTABLE_SYNC_URL_KEY='years_airtable_sync_url';
+function getAirtableSyncUrl(){return localStorage.getItem(AIRTABLE_SYNC_URL_KEY)||''}
+function setAirtableSyncUrl(url){localStorage.setItem(AIRTABLE_SYNC_URL_KEY,url)}
+
+// Treatment field name → livetracking treatment ID mapping
+const AT_TREATMENT_MAP={
+  'knochendichtemessung':'knochendichtemessung','feno':'feno','rsa':'rsa','hrv':'hrv',
+  'ruheekg':'ruheekg','vitalparameter':'vitalparameter','waage':'waage',
+  'audiometrie':'audiometrie','binoptometer':'binoptometer',
+  'binoptometergesichtsfeld':'binoptometergesichtsfeld','funduskopie':'funduskopie',
+  'bodyplethysmographie':'bodyplethysmographie','atemmuskelfunktion':'atemmuskelfunktion',
+  'hautscanner':'hautscanner','kapillaere-bga-ruhe':'kapillaere-bga-ruhe',
+  'kapillaere-bga-belastung':'kapillaere-bga-belastung','mfa-vald-balance':'mfa-vald-balance',
+  'ergospirometrie':'ergospirometrie','3d-bodyscan':'3d-bodyscan','ogtt':'ogtt'
+};
+
+async function fetchAirtablePatients(){
+  const syncUrl=getAirtableSyncUrl();
+  if(!syncUrl){console.log('Airtable sync URL not configured');return false}
+  try{
+    console.log('Fetching Airtable patients...');
+    const resp=await fetch(syncUrl);
+    if(!resp.ok){console.error('Airtable sync error:',resp.status);return false}
+    const data=await resp.json();
+    if(!data.success||!data.patients){console.error('Airtable sync: invalid response',data);return false}
+    console.log(`Airtable: ${data.count} patients for ${data.date}`);
+    mergeAirtablePatients(data.patients);
+    return true;
+  }catch(e){console.error('Airtable sync failed:',e);return false}
+}
+
+function mergeAirtablePatients(atPatients){
+  let newCount=0,updateCount=0;
+  atPatients.forEach(at=>{
+    // Find existing patient by airtable_record_id or by matching PID+name
+    let existing=patients.find(p=>p.airtableRecordId===at.airtable_record_id);
+    if(!existing)existing=patients.find(p=>p.pid===at.pid&&p.vorname===at.vorname&&p.nachname===at.nachname);
+    if(existing){
+      // UPDATE: Merge Airtable Stammdaten, keep local journey/track/location
+      existing.airtableRecordId=at.airtable_record_id;
+      existing.vorname=at.vorname||existing.vorname;
+      existing.nachname=at.nachname||existing.nachname;
+      existing.pid=at.pid||existing.pid;
+      existing.suite=at.suite||existing.suite;
+      existing.arzt=at.arzt||existing.arzt;
+      existing.mfa=at.mfa||existing.mfa;
+      existing.program=at.program||existing.program;
+      existing.programmUmfang=at.programm_umfang||existing.programmUmfang;
+      existing.extraBuchungen=at.extra_buchungen||existing.extraBuchungen;
+      if(at.startzeit)existing.startzeit=at.startzeit;
+      // Merge treatments from Airtable (Airtable is Ground Truth)
+      if(at.treatments&&Object.keys(at.treatments).length){
+        if(!existing.treatments)existing.treatments={};
+        Object.entries(at.treatments).forEach(([txId,status])=>{
+          existing.treatments[txId]=status;
+        });
+      }
+      existing.airtableRoom=at.airtable_room||'';
+      existing.airtableStatus=at.airtable_status||'';
+      updateCount++;
+    }else{
+      // NEW: Create patient from Airtable data
+      const newPat={
+        id:'at-'+at.airtable_record_id,
+        airtableRecordId:at.airtable_record_id,
+        vorname:at.vorname,nachname:at.nachname,pid:at.pid,
+        suite:at.suite,arzt:at.arzt,mfa:at.mfa,
+        program:at.program,programmUmfang:at.programm_umfang||'',
+        extraBuchungen:at.extra_buchungen||'',
+        startzeit:at.startzeit,
+        track:tracks.length?tracks[newCount%tracks.length].id:null,
+        currentLocation:null,locationSince:null,
+        status:'not-arrived',
+        journey:[],
+        treatments:at.treatments||{},
+        airtableRoom:at.airtable_room||'',
+        airtableStatus:at.airtable_status||'',
+        notizen:''
+      };
+      initPatTreatments(newPat);
+      patients.push(newPat);
+      newCount++;
+    }
+  });
+  console.log(`Airtable merge: ${newCount} new, ${updateCount} updated`);
+  if(newCount>0||updateCount>0){
+    // Save merged data to Supabase
+    if(supaClient&&backendMode==='supabase'){
+      saveAllToSupabase().then(()=>console.log('Airtable-merged data saved to Supabase'));
+    }
+    renderAll();
+  }
+}
+
+// Periodic Airtable refresh (every 2 minutes)
+let airtableSyncInterval=null;
+function startAirtableSync(){
+  if(airtableSyncInterval)clearInterval(airtableSyncInterval);
+  airtableSyncInterval=setInterval(()=>{
+    fetchAirtablePatients().then(ok=>{if(ok)console.log('Airtable periodic sync complete')});
+  },120000);
+}
+
 async function savePatientToSupabase(p){
   if(!supaClient||backendMode!=='supabase')return;
   showSyncStatus('syncing');
@@ -912,7 +1020,9 @@ async function savePatientToSupabase(p){
       suite:p.suite,track:p.track||null,current_location:p.currentLocation,
       location_since:p.locationSince?new Date(p.locationSince).toISOString():null,
       status:pStatus(p),journey:p.journey,treatments:p.treatments,
-      programm_umfang:p.programmUmfang||'',extra_buchungen:p.extraBuchungen||'',notizen:p.notizen||''
+      programm_umfang:p.programmUmfang||'',extra_buchungen:p.extraBuchungen||'',notizen:p.notizen||'',
+      airtable_record_id:p.airtableRecordId||null,airtable_room:p.airtableRoom||null,airtable_status:p.airtableStatus||null,
+      airtable_record_id:p.airtableRecordId||null,airtable_room:p.airtableRoom||null,airtable_status:p.airtableStatus||null
     },{onConflict:'id'});
     if(error)throw error;
     showSyncStatus('synced')
@@ -1818,6 +1928,18 @@ if(adminActiveTab==='backend'){
   h+=`<div style="display:flex;gap:8px;margin-top:8px"><button class="admin-btn primary" onclick="saveBackendConfig()">Speichern & Verbinden</button>`;
   if(cfg.url)h+=`<button class="admin-btn danger" onclick="clearBackendConfig()">Trennen</button>`;
   h+=`</div></div></div></div>`;
+  // Airtable Integration
+  const atUrl=getAirtableSyncUrl();
+  h+=`<div class="acc${atUrl?' open':''}"><div class="acc-hdr" onclick="this.parentElement.classList.toggle('open')"><div class="acc-hdr-left">${ico('activity','ico-sm')} Airtable-Integration</div><div class="acc-arrow">${ico('chevDown','ico-sm')}</div></div><div class="acc-body"><div class="acc-inner">`;
+  h+=`<div class="admin-hint">Verbinde dein Airtable mit dem Livetracking. Die Edge Function URL findest du in deinem Supabase Dashboard unter Edge Functions.</div>`;
+  h+=`<label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">Edge Function URL</label>`;
+  h+=`<input class="admin-input" id="airtableSyncUrlInput" placeholder="https://abc123.supabase.co/functions/v1/sync-airtable" value="${atUrl}" style="font-size:16px">`;
+  h+=`<div style="display:flex;gap:8px;margin-top:8px"><button class="admin-btn primary" onclick="saveAirtableConfig()">Speichern</button>`;
+  h+=`<button class="admin-btn" onclick="testAirtableSync()" style="background:var(--warm-200)">Jetzt synchronisieren</button>`;
+  if(atUrl)h+=`<button class="admin-btn danger" onclick="clearAirtableConfig()">Trennen</button>`;
+  h+=`</div>`;
+  h+=`<div id="airtableSyncResult" style="margin-top:8px"></div>`;
+  h+=`</div></div></div>`;
   h+=`<div class="acc"><div class="acc-hdr" onclick="this.parentElement.classList.toggle('open')"><div class="acc-hdr-left">${ico('building','ico-sm')} Datenbank einrichten</div><div class="acc-arrow">${ico('chevDown','ico-sm')}</div></div><div class="acc-body"><div class="acc-inner">`;
   h+=`<div class="admin-hint">Führe dieses SQL in deinem Supabase SQL-Editor aus, um die Tabellen zu erstellen:</div>`;
   h+=`<div class="sql-box">-- YEARS Livetracking Schema
@@ -1860,6 +1982,9 @@ CREATE TABLE IF NOT EXISTS patients (
   extra_buchungen TEXT DEFAULT '',
   notizen TEXT DEFAULT '',
   track TEXT REFERENCES tracks(id),
+  airtable_record_id TEXT UNIQUE,
+  airtable_room TEXT,
+  airtable_status TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -1941,6 +2066,8 @@ async function saveBackendConfig(){
   const ok=await initSupabase();
   if(ok){
     await loadDataFromSupabase();
+    await fetchAirtablePatients();
+    startAirtableSync();
     setupRealtimeSync();
     startConfigPolling();
     renderAll();
@@ -1950,6 +2077,9 @@ async function saveBackendConfig(){
   }
 }
 function clearBackendConfig(){
+function saveAirtableConfig(){const url=document.getElementById('airtableSyncUrlInput').value.trim();if(!url){toast('Bitte URL eingeben');return}setAirtableSyncUrl(url);toast('Airtable URL gespeichert');renderAdmin();fetchAirtablePatients().then(ok=>{if(ok){toast('Airtable-Sync erfolgreich!');startAirtableSync()}else{toast('Sync fehlgeschlagen - URL prüfen')}})}
+function testAirtableSync(){const el=document.getElementById('airtableSyncResult');if(el)el.innerHTML='<div style="padding:8px;font-size:12px;color:var(--text2)">Synchronisiere...</div>';fetchAirtablePatients().then(ok=>{if(el)el.innerHTML=ok?'<div style="padding:8px;font-size:12px;color:var(--green)">\u2713 Sync erfolgreich! Patienten aktualisiert.</div>':'<div style="padding:8px;font-size:12px;color:var(--red)">\u2717 Sync fehlgeschlagen. URL und Edge Function pr\u00fcfen.</div>'})}
+function clearAirtableConfig(){localStorage.removeItem(AIRTABLE_SYNC_URL_KEY);if(airtableSyncInterval){clearInterval(airtableSyncInterval);airtableSyncInterval=null}toast('Airtable-Verbindung getrennt');renderAdmin()}
   localStorage.removeItem(SUPA_CONFIG_KEY);
   if(supaClient&&realtimeChannel)supaClient.removeChannel(realtimeChannel);
   if(configPollTimer)clearInterval(configPollTimer);configPollTimer=null;
