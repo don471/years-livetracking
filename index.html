@@ -1514,7 +1514,7 @@ let h='';
 // Track filter chips
 h+=`<div class="dash-track-bar"><button class="track-chip ${activeTrackFilter==='all'?'on':''}" onclick="setTrackFilter('all')">Alle</button>`;
 tracks.forEach(t=>{
-  const cnt=patients.filter(p=>p.track===t.id&&p.currentLocation&&pStatus(p)!=='done'&&pStatus(p)!=='not-arrived').length;
+  const cnt=patients.filter(p=>p.track===t.id).length;
   h+=`<button class="track-chip ${activeTrackFilter===t.id?'on':''}" onclick="setTrackFilter('${t.id}')"><span class="track-dot" style="background:${t.color}"></span>${t.name}<span style="font-size:11px;font-weight:400;color:${activeTrackFilter===t.id?'var(--warm-400)':'var(--text2)'}">${cnt}</span></button>`;
 });
 h+=`</div>`;
