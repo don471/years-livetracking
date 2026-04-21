@@ -1056,7 +1056,7 @@ function mergeAirtablePatients(atPatients){
         actualStart:at.actual_start||'',
         track:defaultTrack,
         currentLocation:at.airtable_room_id||null,
-        locationSince:at.actual_start||null,
+        locationSince:at.airtable_room_id?Date.now():null,
         status:at.airtable_room_id?'in-treatment':'not-arrived',
         journey:[],
         treatments:at.treatments?Object.fromEntries(Object.entries(at.treatments).map(([k,v])=>[AT_TREATMENT_MAP[k]||k,v])):{},
@@ -1443,7 +1443,7 @@ function getUserRole(){
 // ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
-function fmtDur(ms){if(!ms)return'';const ts=typeof ms==='string'?new Date(ms).getTime():ms;if(isNaN(ts))return'';const m=Math.floor((Date.now()-ts)/6e4);if(m<1)return'<1 min';if(m<60)return m+' min';return Math.floor(m/60)+'h '+(m%60)+'min'}
+function fmtDur(ms){if(!ms)return'';const ts=typeof ms==='string'?new Date(ms).getTime():ms;if(isNaN(ts))return'';const m=Math.floor((Date.now()-ts)/6e4);if(m<0)return'';if(m>480)return'';if(m<1)return'<1 min';if(m<60)return m+' min';return Math.floor(m/60)+'h '+(m%60)+'min'}
 function fmtDurMM(a,b){const m=Math.round((b-a)/6e4);if(isNaN(m)||m<1)return'<1 min';if(m<60)return m+' min';return Math.floor(m/60)+'h '+(m%60)+'min'}
 function fmtClock(ms){const d=new Date(ms);if(isNaN(d.getTime()))return'—';return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
 // Parse startzeit (ISO or HH:MM) into displayable time string
