@@ -736,6 +736,13 @@ const DEFAULT_TX_STATUSES=[{id:'ausstehend',label:'Ausstehend',countAsDone:false
 // ═══════════════════════════════════════
 function initPatTreatments(p){if(!p.treatments)p.treatments={};const defSt=txStatuses.length?txStatuses[0].id:'ausstehend';treatments.forEach(t=>{if(!p.treatments[t.id])p.treatments[t.id]=defSt})}
 function cleanupUnmappedTreatments(p){if(!p.treatments)return;const validIds=new Set(treatments.map(t=>t.id));Object.keys(p.treatments).forEach(k=>{if(!validIds.has(k))delete p.treatments[k]})}
+// Remove any patient without an Airtable record ID (demo/stale data)
+function purgeNonAirtablePatients(){
+  const before=patients.length;
+  patients=patients.filter(p=>p.airtableRecordId||p.id.startsWith('at-'));
+  const removed=before-patients.length;
+  if(removed>0){console.log(`Purged ${removed} non-Airtable patients`);saveData()}
+}
 function rebuildAllLocs(){ALL_LOCS.length=0;ALL_LOCS.push(...SUITE_ROOMS,...STATIONS,...PAUSES)}
 function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function loadHistory(){try{const s=localStorage.getItem('years_history');return s?JSON.parse(s):[];}catch(e){return[]}}
@@ -856,6 +863,7 @@ function skipLogin(){
   document.getElementById('loginOverlay').classList.remove('open');
   backendMode='local';
   loadData();
+  purgeNonAirtablePatients();
   migrateTxStatuses();
   renderAll();
 }
@@ -997,8 +1005,8 @@ function mergeAirtablePatients(atPatients){
       existing.nachname=at.nachname||existing.nachname;
       existing.pid=at.pid||existing.pid;
       existing.suite=at.suite||existing.suite;
-      existing.arzt=at.arzt||existing.arzt;
-      existing.mfa=at.mfa||existing.mfa;
+      existing.arzt=(at.arzt&&!at.arzt.startsWith('rec'))?at.arzt:existing.arzt;
+      existing.mfa=(at.mfa&&!at.mfa.startsWith('rec'))?at.mfa:existing.mfa;
       existing.program=at.program||existing.program;
       existing.programmUmfang=at.programm_umfang||existing.programmUmfang;
       existing.extraBuchungen=at.extra_buchungen||existing.extraBuchungen;
@@ -1033,7 +1041,7 @@ function mergeAirtablePatients(atPatients){
         id:'at-'+at.airtable_record_id,
         airtableRecordId:at.airtable_record_id,
         vorname:at.vorname,nachname:at.nachname,pid:at.pid,
-        suite:at.suite,arzt:at.arzt,mfa:at.mfa,
+        suite:at.suite,arzt:(at.arzt&&!at.arzt.startsWith('rec'))?at.arzt:'',mfa:(at.mfa&&!at.mfa.startsWith('rec'))?at.mfa:'',
         program:at.program,programmUmfang:at.programm_umfang||'',
         extraBuchungen:at.extra_buchungen||'',
         startzeit:at.startzeit,
@@ -1408,8 +1416,11 @@ function handleRealtimePatientChange(payload){
     locationSince:row.location_since?new Date(row.location_since).getTime():null,
     status:row.status||'not-arrived',
     journey:row.journey||[],treatments:row.treatments||{},
-    programmUmfang:row.programm_umfang||'',extraBuchungen:row.extra_buchungen||'',notizen:row.notizen||''
+    programmUmfang:row.programm_umfang||'',extraBuchungen:row.extra_buchungen||'',notizen:row.notizen||'',
+    airtableRecordId:row.airtable_record_id||null,airtableRoom:row.airtable_room||'',airtableStatus:row.airtable_status||''
   };
+  // Skip non-Airtable patients (demo data)
+  if(!mapped.airtableRecordId&&!mapped.id.startsWith('at-')){return}
   if(idx>=0)Object.assign(patients[idx],mapped);
   else{initPatTreatments(mapped);patients.push(mapped)}
   renderAll()
@@ -2433,10 +2444,12 @@ function injectIcons(){const s=(id,n)=>{const el=document.getElementById(id);if(
 // ═══════════════════════════════════════
 (async function boot(){
   loadData();
+  purgeNonAirtablePatients();
   migrateTxStatuses();
   const supaOk=await initSupabase();
   if(supaOk){
     await loadDataFromSupabase();
+    purgeNonAirtablePatients();
     setupRealtimeSync();
     startConfigPolling();
   }
