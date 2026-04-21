@@ -941,16 +941,28 @@ const AIRTABLE_SYNC_URL_DEFAULT='https://kghyycbzgovewhnphbzl.supabase.co/functi
 function getAirtableSyncUrl(){return localStorage.getItem(AIRTABLE_SYNC_URL_KEY)||AIRTABLE_SYNC_URL_DEFAULT}
 function setAirtableSyncUrl(url){localStorage.setItem(AIRTABLE_SYNC_URL_KEY,url)}
 
-// Treatment field name → livetracking treatment ID mapping
+// Airtable treatment ID (from Edge Function) → livetracking treatment ID mapping
 const AT_TREATMENT_MAP={
-  'knochendichtemessung':'knochendichtemessung','feno':'feno','rsa':'rsa','hrv':'hrv',
-  'ruheekg':'ruheekg','vitalparameter':'vitalparameter','waage':'waage',
-  'audiometrie':'audiometrie','binoptometer':'binoptometer',
-  'binoptometergesichtsfeld':'binoptometergesichtsfeld','funduskopie':'funduskopie',
-  'bodyplethysmographie':'bodyplethysmographie','atemmuskelfunktion':'atemmuskelfunktion',
-  'hautscanner':'hautscanner','kapillaere-bga-ruhe':'kapillaere-bga-ruhe',
-  'kapillaere-bga-belastung':'kapillaere-bga-belastung','mfa-vald-balance':'mfa-vald-balance',
-  'ergospirometrie':'ergospirometrie','3d-bodyscan':'3d-bodyscan','ogtt':'ogtt'
+  'knochendichtemessung':'t-knochendichte',
+  'feno':'t-feno',
+  'rsa':'t-rsa',
+  'hrv':'t-hrv',
+  'ruheekg':'t-ruhe-ekg',
+  'vitalparameter':'t-vitalparameter',
+  'waage':'t-waage',
+  'audiometrie':'t-audiometrie',
+  'binoptometer':'t-binoptometer',
+  'binoptometergesichtsfeld':'t-binoptometer-gf',
+  'funduskopie':'t-funduskopie',
+  'bodyplethysmographie':'t-bodyplethysmo',
+  'atemmuskelfunktion':'t-atemmuskel',
+  'hautscanner':'t-hautscanner',
+  'kapillaere-bga-ruhe':'t-bga-ruhe',
+  'kapillaere-bga-belastung':'t-bga-belastung',
+  'mfa-vald-balance':'t-mfa-vald',
+  'ergospirometrie':'t-ergospiro',
+  '3d-bodyscan':'t-3d-bodyscan',
+  'ogtt':'t-ogtt'
 };
 
 async function fetchAirtablePatients(){
@@ -990,8 +1002,9 @@ function mergeAirtablePatients(atPatients){
       // Merge treatments from Airtable (Airtable is Ground Truth)
       if(at.treatments&&Object.keys(at.treatments).length){
         if(!existing.treatments)existing.treatments={};
-        Object.entries(at.treatments).forEach(([txId,status])=>{
-          existing.treatments[txId]=status;
+        Object.entries(at.treatments).forEach(([atTxId,status])=>{
+          const localTxId=AT_TREATMENT_MAP[atTxId]||atTxId;
+          existing.treatments[localTxId]=status;
         });
       }
       existing.airtableRoom=at.airtable_room||'';
@@ -1025,7 +1038,7 @@ function mergeAirtablePatients(atPatients){
         locationSince:at.actual_start||null,
         status:at.airtable_room_id?'in-treatment':'not-arrived',
         journey:[],
-        treatments:at.treatments||{},
+        treatments:at.treatments?Object.fromEntries(Object.entries(at.treatments).map(([k,v])=>[AT_TREATMENT_MAP[k]||k,v])):{},
         airtableRoom:at.airtable_room||'',
         airtableRoomId:at.airtable_room_id||'',
         airtableLastRoom:at.airtable_last_room||'',
