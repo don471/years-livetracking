@@ -213,6 +213,7 @@ body.panel-open{overflow:hidden}
 .pat-mini .pm-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .pat-mini .pm-time{font-size:10px;color:var(--text2);font-weight:400}
 .pat-mini.pm-unassigned{background:var(--orange-bg);border-color:var(--orange);border-style:dashed}
+.pat-mini.pm-done{background:var(--mint-bg);border-color:var(--green);color:var(--green)}
 .pat-mini.pm-waiting{background:var(--yellow-bg);border-color:var(--yellow)}
 .pat-mini.pm-active{background:var(--warm-100);border-color:var(--warm-300)}
 .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:stretch}
@@ -1557,7 +1558,7 @@ h+=`<div class="sheet-tabs"><button class="sheet-tab ${sheetActiveTab==='raum'?'
 // TAB: RAUM
 const rbtn=(r,pid,cur,extra)=>{const lp=patients.filter(x=>x.currentLocation===r.id);const c=lp.length;const isAbschl=r.id==='abschluss';const isCur=cur===r.id;const tc=(isCur&&!isAbschl&&p.locationSince)?timeColor(r.id,p.locationSince):'';const colStyle=tc==='red'?'border-color:var(--red);background:var(--red-bg)':tc==='orange'?'border-color:var(--orange);background:var(--orange-bg)':'';const timeStr=(isCur&&!isAbschl&&p.locationSince)?fmtDur(p.locationSince):'';return`<button class="room-btn ${extra||''} ${isCur?'current':''}" style="${colStyle}" onclick="assignLoc('${pid}','${r.id}')"><span class="ri">${roomIco(r.id)}</span><span class="rn">${r.name}</span><span class="rc">${c} Pat.${timeStr?` · <span class="${tc?'t-'+tc:''}">${timeStr}</span>`:''}</span></button>`};
 const pTrack=tracks.find(t=>t.id===p.track);
-const trackRoomsList=pTrack?pTrack.rooms.map(rid=>ALL_LOCS.find(x=>x.id===rid)).filter(Boolean):STATIONS;
+const trackRoomsList=pTrack?pTrack.rooms.filter(rid=>rid!=='abschluss').map(rid=>ALL_LOCS.find(x=>x.id===rid)).filter(Boolean):STATIONS;
 h+=`<div class="sheet-tab-panel ${sheetActiveTab==='raum'?'active':''}">`;
 // Track selector
 h+=`<div style="padding:4px 20px 8px;display:flex;gap:6px;flex-wrap:wrap">`;
@@ -1569,7 +1570,7 @@ h+=`</div>`;
 // Track rooms
 if(pTrack){h+=`<div class="room-grid">${trackRoomsList.map(r=>rbtn(r,pid,p.currentLocation)).join('')}</div>`}
 else{h+=`<div style="padding:8px 20px;text-align:center;color:var(--orange);font-size:13px;font-weight:600">⚠ Bitte Track auswählen</div><div class="room-grid">${STATIONS.map(r=>rbtn(r,pid,p.currentLocation)).join('')}</div>`}
-h+=`${s!=='not-arrived'?`<div class="room-grid" style="grid-template-columns:1fr"><button class="room-btn checkout" onclick="markDone('${pid}')" style="flex-direction:row;gap:8px;justify-content:center"><span class="ri">${ico('checkCircle')}</span><span class="rn">Fertig — Auschecken</span></button></div>`:''}</div>`;
+h+=`${s!=='not-arrived'&&s!=='done'?`<div class="room-grid" style="grid-template-columns:1fr"><button class="room-btn checkout" onclick="markDone('${pid}')" style="flex-direction:row;gap:8px;justify-content:center"><span class="ri">${ico('checkCircle')}</span><span class="rn">Fertig — Auschecken</span></button></div>`:''}</div>`;
 // TAB: BEHANDLUNGEN
 h+=`<div class="sheet-tab-panel ${sheetActiveTab==='behandlungen'?'active':''}"><div style="padding:8px 20px">${buildBehandlungen(p)}</div></div>`;
 // TAB: PATIENT (editable with save)
@@ -1653,7 +1654,7 @@ async function assignTrack(pid,tid){const p=patients.find(x=>x.id===pid);if(!p)r
 function closeSheet(){document.getElementById('overlay').classList.remove('open');document.getElementById('sheet').classList.remove('open');document.body.classList.remove('panel-open')}
 const checkoutTimers={};
 function startCheckoutTimer(p){if(checkoutTimers[p.id])clearInterval(checkoutTimers[p.id]);const loc=ALL_LOCS.find(x=>x.id==='abschluss');const limitMin=loc&&loc.orangeTime?loc.orangeTime:20;toast(`⏱ ${p.vorname}: Checkout-Timer gestartet (${limitMin} min)`);checkoutTimers[p.id]=setInterval(()=>{if(!p.currentLocation||p.currentLocation!=='abschluss'){clearInterval(checkoutTimers[p.id]);delete checkoutTimers[p.id];return}const elapsed=(Date.now()-p.locationSince)/6e4;if(elapsed>=limitMin){clearInterval(checkoutTimers[p.id]);delete checkoutTimers[p.id];showCheckoutReminder(p)}},3e4)}
-async function showCheckoutReminder(p){const r=await showModal('Checkout-Erinnerung',`<p><strong>${p.vorname} ${p.nachname}</strong> ist seit ${Math.round((Date.now()-p.locationSince)/6e4)} Minuten im Abschluss.</p><p>Jetzt auschecken?</p>`,[{label:'Später',cls:'modal-btn-cancel',val:'no'},{label:'Jetzt auschecken',cls:'modal-btn-confirm',val:'yes'}]);if(r==='yes'){if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now()});p.currentLocation='abschluss';p.status='done';saveData();renderAll();animateTransition('abschluss');toast(`${p.vorname} ${p.nachname} — Ausgecheckt!`)}}
+async function showCheckoutReminder(p){const r=await showModal('Checkout-Erinnerung',`<p><strong>${p.vorname} ${p.nachname}</strong> ist seit ${Math.round((Date.now()-p.locationSince)/6e4)} Minuten im Abschluss.</p><p>Jetzt auschecken?</p>`,[{label:'Später',cls:'modal-btn-cancel',val:'no'},{label:'Jetzt auschecken',cls:'modal-btn-confirm',val:'yes'}]);if(r==='yes'){if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now()});p.doneAt=Date.now();p.currentLocation=null;p.locationSince=null;p.status='done';saveData();renderAll();toast(`${p.vorname} ${p.nachname} — Ausgecheckt!`)}}
 // ─── TRANSITION ENGINE ────────────────
 // Zentraler Patientenfluss: jede Zuweisung (NFC, Swipe, Drag) läuft hierüber.
 // Einheitliche Kapazitätsprüfung, Journey-Tracking, Timer, Animation & Undo.
@@ -1682,7 +1683,10 @@ return true}
 function animateTransition(locId){const el=document.querySelector(`.dcol[data-loc="${locId}"]`);if(el){el.classList.remove('transition-flash');void el.offsetWidth;el.classList.add('transition-flash')}const chips=document.querySelectorAll(`.dcol[data-loc="${locId}"] .dchip`);if(chips.length){const last=chips[chips.length-1];last.classList.remove('transition-enter');void last.offsetWidth;last.classList.add('transition-enter')}}
 // ─── ENTRY POINTS (alle delegieren an transitionPatient) ───
 async function assignLoc(pid,locId){const p=patients.find(x=>x.id===pid);if(!p)return;if(p.currentLocation===locId)return;await transitionPatient(pid,locId);openPatientSheet(pid)}
-async function markDone(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const r=await showModal('Auschecken?',`<p><strong>${p.vorname} ${p.nachname}</strong> wirklich auschecken und als fertig markieren?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Ja, Auschecken',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return;closeSheet();await transitionPatient(pid,'abschluss')}
+async function markDone(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const r=await showModal('Auschecken?',`<p><strong>${p.vorname} ${p.nachname}</strong> wirklich auschecken und als fertig markieren?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Ja, Auschecken',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return;closeSheet();
+  // Close current journey entry
+  if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now()});
+  p.doneAt=Date.now();p.currentLocation=null;p.locationSince=null;p.status='done';saveData();renderAll();toast(`${p.vorname} ${p.nachname} — Ausgecheckt!`)}
 
 // ═══════════════════════════════════════
 // DASHBOARD — Patient Picker for rooms
@@ -1787,14 +1791,33 @@ if(chipPatients.length){
   h+=`</div>`;
 }
 
+// ── Done chip bar: finished patients ──
+const donePats=patients.filter(p=>{
+  const s=pStatus(p);
+  if(s!=='done')return false;
+  if(activeTrackFilter!=='all'&&p.track!==activeTrackFilter)return false;
+  return true;
+});
+if(donePats.length){
+  donePats.sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+  h+=`<div class="pat-chip-bar"><span class="pat-chip-bar-label">✓ Fertig</span>`;
+  donePats.forEach(p=>{
+    const trk=tracks.find(t=>t.id===p.track);
+    const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
+    const doneTime=p.doneAt?new Date(p.doneAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):'';
+    h+=`<div class="pat-mini pm-done" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${p.vorname} ${p.nachname?p.nachname[0]+'.':''}</span>${doneTime?`<span class="pm-time">${doneTime}</span>`:''}</div>`;
+  });
+  h+=`</div>`;
+}
+
 if(activeTrackFilter==='all'){
   // === ALLE: Tracks als gestapelte Sektionen ===
   tracks.forEach(t=>{
-    const trackRoomIds=t.rooms;
+    const trackRoomIds=t.rooms.filter(rid=>rid!=='abschluss');
     const trackStations=trackRoomIds.map(rid=>ALL_LOCS.find(x=>x.id===rid)).filter(Boolean);
-    // Pause-Räume vor Abschluss einfügen
-    const absIdx=trackStations.findIndex(s=>s.id==='abschluss');const pausesToAdd=PAUSES.filter(pr=>!trackStations.find(s=>s.id===pr.id));
-    const allRooms=[...trackStations];if(absIdx>=0){allRooms.splice(absIdx,0,...pausesToAdd)}else{allRooms.push(...pausesToAdd)}
+    // Pause-Räume am Ende einfügen
+    const pausesToAdd=PAUSES.filter(pr=>!trackStations.find(s=>s.id===pr.id));
+    const allRooms=[...trackStations,...pausesToAdd];
     const cnt=patients.filter(p=>p.track===t.id&&p.currentLocation&&pStatus(p)!=='done'&&pStatus(p)!=='not-arrived').length;
     h+=`<div class="dash-section-inline" data-track="${t.id}"><div class="dash-section-title"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.color}"></span>${t.name}<span style="font-weight:400;color:var(--text2);font-size:11px;text-transform:none;letter-spacing:0">${cnt} aktiv</span></div>`;
     h+=`<div class="dash-grid">`;
@@ -1803,11 +1826,11 @@ if(activeTrackFilter==='all'){
   });
 }else{
   // === Einzelner Track-Filter ===
-  const trackRoomIds=getTrackRooms(activeTrackFilter);
+  const trackRoomIds=getTrackRooms(activeTrackFilter).filter(rid=>rid!=='abschluss');
   const trackStations=trackRoomIds.map(rid=>ALL_LOCS.find(x=>x.id===rid)).filter(Boolean);
-  // Pause-Räume vor Abschluss einfügen
-  const absIdx=trackStations.findIndex(s=>s.id==='abschluss');const pausesToAdd=PAUSES.filter(pr=>!trackStations.find(s=>s.id===pr.id));
-  const allRooms=[...trackStations];if(absIdx>=0){allRooms.splice(absIdx,0,...pausesToAdd)}else{allRooms.push(...pausesToAdd)}
+  // Pause-Räume am Ende einfügen
+  const pausesToAdd=PAUSES.filter(pr=>!trackStations.find(s=>s.id===pr.id));
+  const allRooms=[...trackStations,...pausesToAdd];
   h+=`<div class="dash-grid">`;
   allRooms.forEach(loc=>{h+=renderDashLocCol(loc,activeTrackFilter)});
   h+=`</div>`;
