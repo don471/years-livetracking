@@ -2257,6 +2257,9 @@ function injectIcons(){const s=(id,n)=>{const el=document.getElementById(id);if(
     setupRealtimeSync();
     startConfigPolling();
   }
+  // Airtable sync runs independently (works with and without Supabase)
+  await fetchAirtablePatients();
+  startAirtableSync();
   injectIcons();
   renderAll();
   checkURLForRoom();
