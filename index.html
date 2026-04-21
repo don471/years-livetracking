@@ -1764,14 +1764,30 @@ tracks.forEach(t=>{
 });
 h+=`</div>`;
 
-// ── Patient chip bar: compact today's patients ──
+// ── Unassigned chip bar: patients without track (always visible) ──
+const unassignedPats=patients.filter(p=>!p.track&&pStatus(p)!=='done');
+if(unassignedPats.length){
+  const chipOrder={'not-arrived':0,'waiting':1,'pause':2,'in-room':3};
+  unassignedPats.sort((a,b)=>(chipOrder[pStatus(a)]??9)-(chipOrder[pStatus(b)]??9));
+  h+=`<div class="pat-chip-bar"><span class="pat-chip-bar-label" style="color:var(--orange)">⚠ Ohne Track</span>`;
+  unassignedPats.forEach(p=>{
+    const s=pStatus(p);
+    const zeit=fmtStartzeit(p.startzeit);
+    const loc=p.currentLocation?locName(p.currentLocation):'';
+    const sub=s==='not-arrived'?zeit:(loc||zeit);
+    h+=`<div class="pat-mini pm-unassigned" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')"><span>${p.vorname} ${p.nachname?p.nachname[0]+'.':''}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
+  });
+  h+=`</div>`;
+}
+
+// ── Patient chip bar: compact today's patients (track-filtered) ──
 const chipPatients=patients.filter(p=>{
   const s=pStatus(p);
-  if(s==='done')return false; // hide finished
+  if(s==='done')return false;
+  if(!p.track)return false; // unassigned shown above
   if(activeTrackFilter!=='all'&&p.track!==activeTrackFilter)return false;
   return true;
 });
-// Sort: not-arrived first, then waiting, then in-room/pause
 const chipOrder={'not-arrived':0,'waiting':1,'pause':2,'in-room':3};
 chipPatients.sort((a,b)=>(chipOrder[pStatus(a)]??9)-(chipOrder[pStatus(b)]??9));
 if(chipPatients.length){
@@ -1792,12 +1808,11 @@ if(chipPatients.length){
   h+=`</div>`;
 }
 
-// ── Done chip bar: finished patients ──
+// ── Done chip bar: finished patients (track-filtered + unassigned) ──
 const donePats=patients.filter(p=>{
-  const s=pStatus(p);
-  if(s!=='done')return false;
-  if(activeTrackFilter!=='all'&&p.track!==activeTrackFilter)return false;
-  return true;
+  if(pStatus(p)!=='done')return false;
+  if(activeTrackFilter==='all')return true;
+  return p.track===activeTrackFilter||!p.track;
 });
 if(donePats.length){
   donePats.sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
