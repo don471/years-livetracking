@@ -929,6 +929,7 @@ function skipLogin(){
   loadData();
   purgeNonAirtablePatients();
   migrateTxStatuses();
+  bootComplete=true;
   renderAll();
 }
 
@@ -2620,7 +2621,8 @@ async function resetAllData(){const r=await showModal('Daten zurücksetzen?','<p
 // ═══════════════════════════════════════
 // RENDER ALL
 // ═══════════════════════════════════════
-function renderAll(){updateHeader();renderFilters();renderDashboard();if(currentView==='patients')renderPatients();if(currentView==='checkin'&&detectedRoomId)renderScanPatients();if(currentView==='checkin')renderActivity()}
+let bootComplete=false;
+function renderAll(){if(!bootComplete)return;updateHeader();renderFilters();renderDashboard();if(currentView==='patients')renderPatients();if(currentView==='checkin'&&detectedRoomId)renderScanPatients();if(currentView==='checkin')renderActivity()}
 setInterval(renderAll,10000);
 
 function injectIcons(){const s=(id,n)=>{const el=document.getElementById(id);if(el)el.innerHTML=ICO[n]||''};s('hdrIcoCheckin','smartphone');s('hdrIcoAdmin','settings');s('navIcoCheckin','smartphone');s('navIcoPatients','list');s('navIcoDash','grid');s('navIcoAdmin','settings');s('heroIcoNfc','smartphone');s('scanSearchIco','search');s('patSearchIco','search')}
@@ -2629,20 +2631,29 @@ function injectIcons(){const s=(id,n)=>{const el=document.getElementById(id);if(
 // INIT
 // ═══════════════════════════════════════
 (async function boot(){
-  loadData();
-  purgeNonAirtablePatients();
-  migrateTxStatuses();
+  // Show loading state — don't render stale data
+  const dashEl=document.getElementById('dashGrid');
+  if(dashEl)dashEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)"><div style="font-size:14px;font-weight:600">Daten werden geladen…</div></div>';
+  injectIcons();
+  // Try Supabase first
   const supaOk=await initSupabase();
   if(supaOk){
     await loadDataFromSupabase();
     purgeNonAirtablePatients();
+    migrateTxStatuses();
     setupRealtimeSync();
     startConfigPolling();
+  }else{
+    // Fallback: load from localStorage only if no Supabase
+    loadData();
+    purgeNonAirtablePatients();
+    migrateTxStatuses();
   }
   // Airtable sync runs independently (works with and without Supabase)
   await fetchAirtablePatients();
   startAirtableSync();
-  injectIcons();
+  // First render — all data is now current
+  bootComplete=true;
   renderAll();
   checkURLForRoom();
   if(!supaOk)resetScanView();
