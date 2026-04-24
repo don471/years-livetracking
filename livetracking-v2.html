@@ -1091,11 +1091,7 @@ function mergeAirtablePatients(atPatients){
       if(at.actual_start)existing.actualStart=at.actual_start;
       // Default to Track 1 if patient has no track assigned
       if(!existing.track&&tracks.length)existing.track=tracks[0].id;
-      // Update location from Airtable if patient hasn't been manually moved in livetracking
-      if(at.airtable_room_id&&!existing.currentLocation){
-        existing.currentLocation=at.airtable_room_id;
-        existing.status='in-treatment';
-      }
+      // Airtable room is reference only — never auto-assign patients to rooms
       updateCount++;
     }else{
       // NEW: Create patient from Airtable data
@@ -1111,9 +1107,9 @@ function mergeAirtablePatients(atPatients){
         startzeit:at.startzeit,
         actualStart:at.actual_start||'',
         track:defaultTrack,
-        currentLocation:at.airtable_room_id||null,
-        locationSince:at.airtable_room_id?Date.now():null,
-        status:at.airtable_room_id?'in-treatment':'not-arrived',
+        currentLocation:null,
+        locationSince:null,
+        status:'not-arrived',
         journey:[],
         treatments:at.treatments?Object.fromEntries(Object.entries(at.treatments).map(([k,v])=>[AT_TREATMENT_MAP[k]||k,v])):{},
         airtableRoom:at.airtable_room||'',
