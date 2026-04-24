@@ -765,7 +765,7 @@ function loadData(){try{const s=localStorage.getItem('years_tracking');if(s){con
   patients=isNewDay?[]:(d.patients||[]);
   if(isNewDay)console.log(`Day change detected (${savedDay} → ${todayStr}): cleared ${(d.patients||[]).length} patients from yesterday`);
   nfcTags=d.nfcTags||{};teamMembers=d.teamMembers||DEFAULT_TEAM;suites=d.suites||DEFAULT_SUITES;timeSlots=d.timeSlots||DEFAULT_TIMESLOTS;treatments=d.treatments||JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=d.txStatuses||JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=d.tracks||JSON.parse(JSON.stringify(DEFAULT_TRACKS));if(d.suiteRooms){SUITE_ROOMS.length=0;d.suiteRooms.forEach(r=>SUITE_ROOMS.push(r))}if(d.stations){STATIONS.length=0;d.stations.forEach(r=>STATIONS.push(r))}if(d.pauses){PAUSES.length=0;d.pauses.forEach(r=>PAUSES.push(r))}if(!PAUSES.length){DEFAULT_PAUSES.forEach(p=>PAUSES.push({...p}))}rebuildAllLocs();patients.forEach(initPatTreatments);patients.forEach((p,i)=>{if(!p.track&&tracks.length)p.track=tracks[i%tracks.length].id});return}}catch(e){}patients=[];nfcTags={};teamMembers=JSON.parse(JSON.stringify(DEFAULT_TEAM));suites=[...DEFAULT_SUITES];timeSlots=JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));treatments=JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=JSON.parse(JSON.stringify(DEFAULT_TRACKS))}
-function saveData(){try{localStorage.setItem('years_tracking',JSON.stringify({patients,nfcTags,teamMembers,suites,timeSlots,treatments,txStatuses,tracks,suiteRooms:SUITE_ROOMS,stations:STATIONS,pauses:PAUSES,savedAt:Date.now()}));archiveDay()}catch(e){}if(backendMode==='supabase')saveAllToSupabase()}
+function saveData(){try{localStorage.setItem('years_tracking',JSON.stringify({patients,nfcTags,teamMembers,suites,timeSlots,treatments,txStatuses,tracks,suiteRooms:SUITE_ROOMS,stations:STATIONS,pauses:PAUSES,savedAt:Date.now()}));archiveDay()}catch(e){}if(backendMode==='supabase')saveAllToSupabase().catch(e=>console.error('Supabase save failed:',e))}
 
 // Migrate: ensure Airtable-matching txStatuses exist
 function migrateTxStatuses(){
@@ -1627,9 +1627,9 @@ tracks.forEach(t=>{
   h+=`<button style="padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;border:2px solid ${isActive?'var(--warm-900)':'var(--border)'};background:${isActive?'var(--warm-900)':'#fff'};color:${isActive?'var(--mint)':'var(--text)'};cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s" onclick="assignTrack('${pid}','${t.id}')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color}"></span>${t.name}</button>`;
 });
 h+=`</div>`;
-// Track rooms
-if(pTrack){h+=`<div class="room-grid">${trackRoomsList.map(r=>rbtn(r,pid,p.currentLocation)).join('')}</div>`}
-else{h+=`<div style="padding:8px 20px;text-align:center;color:var(--orange);font-size:13px;font-weight:600">⚠ Bitte Track auswählen</div><div class="room-grid">${STATIONS.map(r=>rbtn(r,pid,p.currentLocation)).join('')}</div>`}
+// Track rooms + Pause rooms
+if(pTrack){h+=`<div class="room-grid">${trackRoomsList.map(r=>rbtn(r,pid,p.currentLocation)).join('')}</div>`;if(PAUSES.length){h+=`<div style="padding:6px 20px 2px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Pausen</div><div class="room-grid">${PAUSES.map(r=>rbtn(r,pid,p.currentLocation)).join('')}</div>`}}
+else{h+=`<div style="padding:8px 20px;text-align:center;color:var(--orange);font-size:13px;font-weight:600">⚠ Bitte Track auswählen</div><div class="room-grid">${STATIONS.map(r=>rbtn(r,pid,p.currentLocation)).join('')}</div><div class="room-grid">${PAUSES.map(r=>rbtn(r,pid,p.currentLocation)).join('')}</div>`}
 h+=`${s==='done'?`<div class="room-grid" style="grid-template-columns:1fr"><button class="room-btn" onclick="undoDone('${pid}')" style="flex-direction:row;gap:8px;justify-content:center;border-color:var(--orange);background:var(--orange-bg)"><span class="ri">${ico('arrowLeft')}</span><span class="rn">Zurückholen — wieder aktiv setzen</span></button></div>`:s!=='not-arrived'?`<div class="room-grid" style="grid-template-columns:1fr"><button class="room-btn checkout" onclick="markDone('${pid}')" style="flex-direction:row;gap:8px;justify-content:center"><span class="ri">${ico('checkCircle')}</span><span class="rn">Fertig — Auschecken</span></button></div><div class="room-grid" style="grid-template-columns:1fr"><button class="room-btn" onclick="resetToNotArrived('${pid}')" style="flex-direction:row;gap:8px;justify-content:center;border-color:var(--warm-300);background:var(--warm-100)"><span class="ri">${ico('arrowLeft')}</span><span class="rn">Zurück auf „Nicht da"</span></button></div>`:''}</div>`;
 // TAB: BEHANDLUNGEN
 h+=`<div class="sheet-tab-panel ${sheetActiveTab==='behandlungen'?'active':''}"><div style="padding:8px 20px">${buildBehandlungen(p)}</div></div>`;
@@ -1790,12 +1790,14 @@ if(locId==='abschluss')startCheckoutTimer(p);
 saveData();
 // 7) Activity-Log (falls NFC/QR)
 if(opts.log)logActivity(`${p.vorname} ${p.nachname} → ${locName(locId)}`);
-// 8) UI aktualisieren
+// 8) Sofort einzelnen Patient in Supabase speichern (zuverlässiger als bulk)
+if(backendMode==='supabase')savePatientToSupabase(p);
+// 9) UI aktualisieren
 renderAll();
-// 9) Animation (identisch für alle Quellen)
+// 10) Animation (identisch für alle Quellen)
 animateTransition(locId);
-// 10) Toast mit Undo
-toast(`${p.vorname} → ${locName(locId)}`,()=>{p.journey.length=pJ;p.currentLocation=pL;p.locationSince=pS;p.status=pSt;saveData();if(opts.log)logActivity(`Rückgängig: ${p.vorname} ${p.nachname}`);renderAll()});
+// 11) Toast mit Undo
+toast(`${p.vorname} → ${locName(locId)}`,()=>{p.journey.length=pJ;p.currentLocation=pL;p.locationSince=pS;p.status=pSt;saveData();if(backendMode==='supabase')savePatientToSupabase(p);if(opts.log)logActivity(`Rückgängig: ${p.vorname} ${p.nachname}`);renderAll()});
 return true}
 function animateTransition(locId){const el=document.querySelector(`.dcol[data-loc="${locId}"]`);if(el){el.classList.remove('transition-flash');void el.offsetWidth;el.classList.add('transition-flash')}const chips=document.querySelectorAll(`.dcol[data-loc="${locId}"] .dchip`);if(chips.length){const last=chips[chips.length-1];last.classList.remove('transition-enter');void last.offsetWidth;last.classList.add('transition-enter')}}
 // ─── ENTRY POINTS (alle delegieren an transitionPatient) ───
@@ -1976,7 +1978,7 @@ function dashDragStart(e,pid){dragPatientId=pid;e.dataTransfer.effectAllowed='mo
 function dashDragEnd(e){e.target.classList.remove('dragging');document.querySelectorAll('.dcol.drag-over').forEach(el=>el.classList.remove('drag-over'));dragPatientId=null}
 function dashDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';const c=e.target.closest('.dcol');if(c)c.classList.add('drag-over')}
 function dashDragLeave(e){const c=e.target.closest('.dcol');if(c)c.classList.remove('drag-over')}
-async function chipBarDrop(e){e.preventDefault();const pid=e.dataTransfer.getData('text/plain')||dragPatientId;if(!pid)return;const p=patients.find(x=>x.id===pid);if(!p)return;if(pStatus(p)==='not-arrived')return;if(p.currentLocation&&p.locationSince){if(!p.journey)p.journey=[];p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined})}p.status='not-arrived';p.currentLocation=null;p.locationSince=null;p.lastMovedBy='';saveData();renderAll();toast(`${p.vorname} ${p.nachname} → zurück auf Check-in`)}
+async function chipBarDrop(e){e.preventDefault();const pid=e.dataTransfer.getData('text/plain')||dragPatientId;if(!pid)return;const p=patients.find(x=>x.id===pid);if(!p)return;if(pStatus(p)==='not-arrived')return;const r=await showModal('Zurück auf Check-in?',`<p><strong>${p.vorname} ${p.nachname}</strong> aus <strong>${locName(p.currentLocation)}</strong> entfernen und zurück auf Check-in setzen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Zurücksetzen',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes'){renderAll();return}if(p.currentLocation&&p.locationSince){if(!p.journey)p.journey=[];p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined})}p.status='not-arrived';p.currentLocation=null;p.locationSince=null;p.lastMovedBy='';saveData();renderAll();toast(`${p.vorname} ${p.nachname} → zurück auf Check-in`)}
 async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.dcol.drag-over').forEach(el=>el.classList.remove('drag-over'));const pid=e.dataTransfer.getData('text/plain')||dragPatientId;if(!pid)return;
   const p=patients.find(x=>x.id===pid);if(!p)return;
   // Detect target track from section
@@ -1989,6 +1991,13 @@ async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.
     if(r!=='yes')return;
     p.journey.push({type:'track-change',from:p.track,to:targetTrack,at:Date.now()});
     p.track=targetTrack;saveData();
+  }
+  const s=pStatus(p);
+  if(s==='not-arrived'||s==='waiting'){
+    const action=s==='not-arrived'?'einchecken und':'';
+    const r2=await showModal('Patient zuweisen?',`<p><strong>${p.vorname} ${p.nachname}</strong> ${action} in <strong>${locName(locId)}</strong> zuweisen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Zuweisen',cls:'modal-btn-confirm',val:'yes'}]);
+    if(r2!=='yes')return;
+    if(s==='not-arrived'){if(!p.journey)p.journey=[];if(!p.track&&tracks.length){p.track=tracks[0].id;p.journey.push({type:'track-change',from:null,to:p.track,at:Date.now()})}p.status='waiting';p.currentLocation='wartebereich';p.locationSince=Date.now();saveData()}
   }
   await transitionPatient(pid,locId)}
 let touchDragTimer=null,touchStartX=0,touchStartY=0,touchDragActive=false,touchSrcEl=null,autoScrollRAF=null;
