@@ -1156,11 +1156,11 @@ function startAirtableSync(){
   },AIRTABLE_SYNC_INTERVAL);
 }
 
-async function savePatientToSupabase(p){
-  if(!supaClient||backendMode!=='supabase')return;
+async function savePatientToSupabase(p,retry=0){
+  if(!supaClient||backendMode!=='supabase')return false;
   showSyncStatus('syncing');
   try{
-    const{error}=await supaClient.from('patients').upsert({
+    const row={
       id:p.id,pid:p.pid,vorname:p.vorname,nachname:p.nachname,
       program:p.program,startzeit:p.startzeit,mfa:p.mfa,arzt:p.arzt,
       suite:p.suite,track:p.track||null,current_location:p.currentLocation,
@@ -1168,10 +1168,15 @@ async function savePatientToSupabase(p){
       status:pStatus(p),journey:p.journey,treatments:p.treatments,
       programm_umfang:p.programmUmfang||'',extra_buchungen:p.extraBuchungen||'',notizen:p.notizen||'',
       airtable_record_id:p.airtableRecordId||null,airtable_room:p.airtableRoom||null,airtable_status:p.airtableStatus||null
-    },{onConflict:'id'});
+    };
+    const{error}=await supaClient.from('patients').upsert(row,{onConflict:'id'});
     if(error)throw error;
-    showSyncStatus('synced')
-  }catch(e){console.error('Save patient failed:',e);showSyncStatus('error')}
+    showSyncStatus('synced');return true
+  }catch(e){
+    console.error('Save patient failed:',e.message||e);
+    if(retry<2){return savePatientToSupabase(p,retry+1)}
+    showSyncStatus('error');toast('⚠ Sync-Fehler: '+((e.message||'').slice(0,60)));return false
+  }
 }
 
 async function saveAllToSupabase(){
@@ -1791,14 +1796,14 @@ if(locId==='abschluss')startCheckoutTimer(p);
 saveData();
 // 7) Activity-Log (falls NFC/QR)
 if(opts.log)logActivity(`${p.vorname} ${p.nachname} → ${locName(locId)}`);
-// 8) Sofort einzelnen Patient in Supabase speichern (zuverlässiger als bulk)
-if(backendMode==='supabase')savePatientToSupabase(p);
+// 8) Sofort einzelnen Patient in Supabase speichern (await = zuverlässig)
+if(backendMode==='supabase')await savePatientToSupabase(p);
 // 9) UI aktualisieren
 renderAll();
 // 10) Animation (identisch für alle Quellen)
 animateTransition(locId);
 // 11) Toast mit Undo
-toast(`${p.vorname} → ${locName(locId)}`,()=>{p.journey.length=pJ;p.currentLocation=pL;p.locationSince=pS;p.status=pSt;saveData();if(backendMode==='supabase')savePatientToSupabase(p);if(opts.log)logActivity(`Rückgängig: ${p.vorname} ${p.nachname}`);renderAll()});
+toast(`${p.vorname} → ${locName(locId)}`,async()=>{p.journey.length=pJ;p.currentLocation=pL;p.locationSince=pS;p.status=pSt;saveData();if(backendMode==='supabase')await savePatientToSupabase(p);if(opts.log)logActivity(`Rückgängig: ${p.vorname} ${p.nachname}`);renderAll()});
 return true}
 function animateTransition(locId){const el=document.querySelector(`.dcol[data-loc="${locId}"]`);if(el){el.classList.remove('transition-flash');void el.offsetWidth;el.classList.add('transition-flash')}const chips=document.querySelectorAll(`.dcol[data-loc="${locId}"] .dchip`);if(chips.length){const last=chips[chips.length-1];last.classList.remove('transition-enter');void last.offsetWidth;last.classList.add('transition-enter')}}
 // ─── ENTRY POINTS (alle delegieren an transitionPatient) ───
@@ -1806,8 +1811,8 @@ async function assignLoc(pid,locId){const p=patients.find(x=>x.id===pid);if(!p)r
 async function markDone(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const r=await showModal('Auschecken?',`<p><strong>${p.vorname} ${p.nachname}</strong> wirklich auschecken und als fertig markieren?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Ja, Auschecken',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return;closeSheet();
   // Close current journey entry
   if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined});
-  p.doneAt=Date.now();p.currentLocation=null;p.locationSince=null;p.status='done';saveData();renderAll();toast(`${p.vorname} ${p.nachname} — Ausgecheckt!`)}
-async function resetToNotArrived(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const r=await showModal('Zurücksetzen?',`<p><strong>${p.vorname} ${p.nachname}</strong> auf „Nicht da" zurücksetzen?</p><p style="font-size:13px;color:var(--text2);margin-top:8px">Der Patient verschwindet aus dem Dashboard und kann erneut eingecheckt werden.</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Zurücksetzen',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return;if(p.currentLocation&&p.locationSince){if(!p.journey)p.journey=[];p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined})}p.status='not-arrived';p.currentLocation=null;p.locationSince=null;p.lastMovedBy='';saveData();closeSheet();renderAll();toast(`${p.vorname} ${p.nachname} — zurück auf „Nicht da"`)}
+  p.doneAt=Date.now();p.currentLocation=null;p.locationSince=null;p.status='done';saveData();if(backendMode==='supabase')await savePatientToSupabase(p);renderAll();toast(`${p.vorname} ${p.nachname} — Ausgecheckt!`)}
+async function resetToNotArrived(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const r=await showModal('Zurücksetzen?',`<p><strong>${p.vorname} ${p.nachname}</strong> auf „Nicht da" zurücksetzen?</p><p style="font-size:13px;color:var(--text2);margin-top:8px">Der Patient verschwindet aus dem Dashboard und kann erneut eingecheckt werden.</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Zurücksetzen',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return;if(p.currentLocation&&p.locationSince){if(!p.journey)p.journey=[];p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined})}p.status='not-arrived';p.currentLocation=null;p.locationSince=null;p.lastMovedBy='';saveData();if(backendMode==='supabase')await savePatientToSupabase(p);closeSheet();renderAll();toast(`${p.vorname} ${p.nachname} — zurück auf „Nicht da"`)}
 async function undoDone(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const r=await showModal('Zurückholen?',`<p><strong>${p.vorname} ${p.nachname}</strong> wieder als aktiv setzen?</p><p style="font-size:13px;color:var(--text2);margin-top:8px">Der Patient wird in den Wartebereich verschoben.</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Ja, zurückholen',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return;p.status='waiting';p.currentLocation='wartebereich';p.locationSince=Date.now();p.doneAt=null;saveData();renderAll();openPatientSheet(pid);toast(`${p.vorname} ${p.nachname} — wieder aktiv`)}
 
 // ═══════════════════════════════════════
@@ -1979,7 +1984,7 @@ function dashDragStart(e,pid){dragPatientId=pid;e.dataTransfer.effectAllowed='mo
 function dashDragEnd(e){e.target.classList.remove('dragging');document.querySelectorAll('.dcol.drag-over').forEach(el=>el.classList.remove('drag-over'));dragPatientId=null}
 function dashDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';const c=e.target.closest('.dcol');if(c)c.classList.add('drag-over')}
 function dashDragLeave(e){const c=e.target.closest('.dcol');if(c)c.classList.remove('drag-over')}
-async function chipBarDrop(e){e.preventDefault();const pid=e.dataTransfer.getData('text/plain')||dragPatientId;if(!pid)return;const p=patients.find(x=>x.id===pid);if(!p)return;if(pStatus(p)==='not-arrived')return;const r=await showModal('Zurück auf Check-in?',`<p><strong>${p.vorname} ${p.nachname}</strong> aus <strong>${locName(p.currentLocation)}</strong> entfernen und zurück auf Check-in setzen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Zurücksetzen',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes'){renderAll();return}if(p.currentLocation&&p.locationSince){if(!p.journey)p.journey=[];p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined})}p.status='not-arrived';p.currentLocation=null;p.locationSince=null;p.lastMovedBy='';saveData();renderAll();toast(`${p.vorname} ${p.nachname} → zurück auf Check-in`)}
+async function chipBarDrop(e){e.preventDefault();const pid=e.dataTransfer.getData('text/plain')||dragPatientId;if(!pid)return;const p=patients.find(x=>x.id===pid);if(!p)return;if(pStatus(p)==='not-arrived')return;const r=await showModal('Zurück auf Check-in?',`<p><strong>${p.vorname} ${p.nachname}</strong> aus <strong>${locName(p.currentLocation)}</strong> entfernen und zurück auf Check-in setzen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Zurücksetzen',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes'){renderAll();return}if(p.currentLocation&&p.locationSince){if(!p.journey)p.journey=[];p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined})}p.status='not-arrived';p.currentLocation=null;p.locationSince=null;p.lastMovedBy='';saveData();if(backendMode==='supabase')await savePatientToSupabase(p);renderAll();toast(`${p.vorname} ${p.nachname} → zurück auf Check-in`)}
 async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.dcol.drag-over').forEach(el=>el.classList.remove('drag-over'));const pid=e.dataTransfer.getData('text/plain')||dragPatientId;if(!pid)return;
   const p=patients.find(x=>x.id===pid);if(!p)return;
   // Detect target track from section
