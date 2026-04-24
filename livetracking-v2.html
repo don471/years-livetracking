@@ -2643,19 +2643,29 @@ function injectIcons(){const s=(id,n)=>{const el=document.getElementById(id);if(
   const dashEl=document.getElementById('dashGrid');
   if(dashEl)dashEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)"><div style="font-size:14px;font-weight:600">Daten werden geladen…</div></div>';
   injectIcons();
-  // Try Supabase first
+  // Load localStorage first (always available, may have unsaved changes)
+  loadData();
+  purgeNonAirtablePatients();
+  migrateTxStatuses();
+  const localPatients=patients.map(p=>({...p}));
+  const localSavedAt=JSON.parse(localStorage.getItem('years_tracking')||'{}').savedAt||0;
+  // Then try Supabase
   const supaOk=await initSupabase();
   if(supaOk){
     await loadDataFromSupabase();
     purgeNonAirtablePatients();
-    migrateTxStatuses();
+    // Merge: if localStorage has patient moves that Supabase doesn't, keep them
+    localPatients.forEach(lp=>{
+      if(!lp.airtableRecordId&&!lp.id.startsWith('at-'))return;
+      const sp=patients.find(p=>p.id===lp.id);
+      if(sp&&lp.currentLocation&&!sp.currentLocation){
+        sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince;sp.status=lp.status;sp.journey=lp.journey;sp.lastMovedBy=lp.lastMovedBy||'';
+      }else if(sp&&lp.currentLocation&&sp.currentLocation&&lp.currentLocation!==sp.currentLocation&&localSavedAt>Date.now()-60000){
+        sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince;sp.status=lp.status;sp.journey=lp.journey;sp.lastMovedBy=lp.lastMovedBy||'';
+      }
+    });
     setupRealtimeSync();
     startConfigPolling();
-  }else{
-    // Fallback: load from localStorage only if no Supabase
-    loadData();
-    purgeNonAirtablePatients();
-    migrateTxStatuses();
   }
   // Airtable sync runs independently (works with and without Supabase)
   await fetchAirtablePatients();
