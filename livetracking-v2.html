@@ -194,7 +194,7 @@ body.panel-open{overflow:hidden}
 .jtl::before{content:'';position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--border);border-radius:1px}
 .jstep{position:relative;padding:4px 0 12px 12px;font-size:13px}
 .jstep::before{content:'';position:absolute;left:-17px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--border)}
-.jstep.now::before{background:var(--green)}
+.jstep.now::before{background:var(--green)}.jstep.jstep-orange::before{background:var(--orange)}.jstep.jstep-red::before{background:var(--red)}
 .jstep-room{font-weight:600;display:flex;align-items:center;gap:4px}.jstep-time{font-size:12px;color:var(--text2);margin-top:1px}
 
 /* ── DASHBOARD ── */
@@ -1490,6 +1490,7 @@ function handleRealtimePatientChange(payload){
   renderAll()
 }
 
+function getCurrentUserName(){if(!supaUser)return'';const m=teamMembers.find(x=>x.email===supaUser.email);return m?m.name:supaUser.user_metadata?.full_name||supaUser.email.split('@')[0]||''}
 function getUserRole(){
   if(!supaUser)return'admin'; // demo mode = admin
   const member=teamMembers.find(m=>m.email===supaUser.email);
@@ -1499,7 +1500,7 @@ function getUserRole(){
 // ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
-function fmtDur(ms){if(!ms)return'';const ts=typeof ms==='string'?new Date(ms).getTime():ms;if(isNaN(ts))return'';const m=Math.floor((Date.now()-ts)/6e4);if(m<0)return'';if(m>480)return'';if(m<1)return'<1 min';if(m<60)return m+' min';return Math.floor(m/60)+'h '+(m%60)+'min'}
+function fmtDur(ms){if(!ms)return'';const ts=typeof ms==='string'?new Date(ms).getTime():ms;if(isNaN(ts))return'';const m=Math.floor((Date.now()-ts)/6e4);if(m<0)return'';if(m<1)return'<1 min';if(m<60)return m+' min';return Math.floor(m/60)+'h '+(m%60)+'min'}
 function fmtDurMM(a,b){const m=Math.round((b-a)/6e4);if(isNaN(m)||m<1)return'<1 min';if(m<60)return m+' min';return Math.floor(m/60)+'h '+(m%60)+'min'}
 function fmtClock(ms){const d=new Date(ms);if(isNaN(d.getTime()))return'—';return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
 // Parse startzeit (ISO or HH:MM) into displayable time string
@@ -1680,7 +1681,7 @@ h+=`</div><div class="field-save-bar" id="fieldSaveBar"><button class="admin-btn
 // TAB: VERWEILDAUER
 h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verweildauer'?'active':''}">${buildVerweildauer(p)}</div>`;
 // TAB: VERLAUF
-h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verlauf'?'active':''}">`;if(p.journey.length||p.currentLocation){h+=`<div class="journey"><div class="journey-title">Heutiger Verlauf</div><div class="jtl">`;p.journey.forEach(st=>{if(st.type==='track-change'){const fromT=tracks.find(t=>t.id===st.from);const toT=tracks.find(t=>t.id===st.to);const fromL=fromT?fromT.name:'Kein Track';const toL=toT?toT.name:'—';const fromDot=fromT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fromT.color};margin-right:2px"></span>`:'';const toDot=toT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${toT.color};margin-right:2px"></span>`:'';h+=`<div class="jstep" style="background:var(--warm-50);border-left:3px solid ${toT?toT.color:'var(--border)'}"><span class="jstep-room" style="font-size:12px">${fromDot}${fromL} → ${toDot}${toL}</span><div class="jstep-time">${fmtClock(st.at)} · Track gewechselt</div></div>`}else{h+=`<div class="jstep"><span class="jstep-room">${roomIco(st.loc,'ico-sm')} ${locName(st.loc)}</span><div class="jstep-time">${fmtClock(st.enter)} – ${fmtClock(st.exit)} · ${fmtDurMM(st.enter,st.exit)}</div></div>`}});if(p.currentLocation)h+=`<div class="jstep now"><span class="jstep-room">${roomIco(p.currentLocation,'ico-sm')} ${locName(p.currentLocation)}</span><div class="jstep-time">seit ${fmtClock(p.locationSince)} · ${fmtDur(p.locationSince)}</div></div>`;h+='</div></div>'}else h+=`<div class="empty" style="padding:24px"><div class="empty-icon">${ico('clock','ico-xl')}</div><div class="empty-text">Noch kein Verlauf</div></div>`;h+='</div>';
+h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verlauf'?'active':''}">`;if(p.journey.length||p.currentLocation){h+=`<div class="journey"><div class="journey-title">Heutiger Verlauf</div><div class="jtl">`;p.journey.forEach(st=>{if(st.type==='track-change'){const fromT=tracks.find(t=>t.id===st.from);const toT=tracks.find(t=>t.id===st.to);const fromL=fromT?fromT.name:'Kein Track';const toL=toT?toT.name:'—';const fromDot=fromT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fromT.color};margin-right:2px"></span>`:'';const toDot=toT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${toT.color};margin-right:2px"></span>`:'';h+=`<div class="jstep" style="background:var(--warm-50);border-left:3px solid ${toT?toT.color:'var(--border)'}"><span class="jstep-room" style="font-size:12px">${fromDot}${fromL} → ${toDot}${toL}</span><div class="jstep-time">${fmtClock(st.at)} · Track gewechselt</div></div>`}else{const byUser=st.movedBy?` · ${st.movedBy}`:'';h+=`<div class="jstep"><span class="jstep-room">${roomIco(st.loc,'ico-sm')} ${locName(st.loc)}</span><div class="jstep-time">${fmtClock(st.enter)} – ${fmtClock(st.exit)} · ${fmtDurMM(st.enter,st.exit)}${byUser}</div></div>`}});if(p.currentLocation){const tc=timeColor(p.currentLocation,p.locationSince);const tcCls=tc==='red'?'jstep-red':tc==='orange'?'jstep-orange':'now';const lastJ=p.journey.length?p.journey[p.journey.length-1]:null;const curBy=lastJ&&lastJ.movedBy?` · ${lastJ.movedBy}`:'';h+=`<div class="jstep ${tcCls}"><span class="jstep-room">${roomIco(p.currentLocation,'ico-sm')} ${locName(p.currentLocation)}</span><div class="jstep-time">seit ${fmtClock(p.locationSince)} · ${fmtDur(p.locationSince)}${curBy}</div></div>`};h+='</div></div>'}else h+=`<div class="empty" style="padding:24px"><div class="empty-icon">${ico('clock','ico-xl')}</div><div class="empty-text">Noch kein Verlauf</div></div>`;h+='</div>';
 document.getElementById('sheetContent').innerHTML=h;document.getElementById('overlay').classList.add('open');document.getElementById('sheet').classList.add('open');document.body.classList.add('panel-open')}
 function switchSheetTab(t,pid){sheetActiveTab=t;openPatientSheet(pid)}
 function fR(l,c){return`<div class="field-row"><div class="field-label">${l}</div><div class="field-value">${c}</div></div>`}
@@ -1773,7 +1774,7 @@ async function assignTrack(pid,tid){const p=patients.find(x=>x.id===pid);if(!p)r
 function closeSheet(){document.getElementById('overlay').classList.remove('open');document.getElementById('sheet').classList.remove('open');document.body.classList.remove('panel-open')}
 const checkoutTimers={};
 function startCheckoutTimer(p){if(checkoutTimers[p.id])clearInterval(checkoutTimers[p.id]);const loc=ALL_LOCS.find(x=>x.id==='abschluss');const limitMin=loc&&loc.orangeTime?loc.orangeTime:20;toast(`⏱ ${p.vorname}: Checkout-Timer gestartet (${limitMin} min)`);checkoutTimers[p.id]=setInterval(()=>{if(!p.currentLocation||p.currentLocation!=='abschluss'){clearInterval(checkoutTimers[p.id]);delete checkoutTimers[p.id];return}const elapsed=(Date.now()-p.locationSince)/6e4;if(elapsed>=limitMin){clearInterval(checkoutTimers[p.id]);delete checkoutTimers[p.id];showCheckoutReminder(p)}},3e4)}
-async function showCheckoutReminder(p){const r=await showModal('Checkout-Erinnerung',`<p><strong>${p.vorname} ${p.nachname}</strong> ist seit ${Math.round((Date.now()-p.locationSince)/6e4)} Minuten im Abschluss.</p><p>Jetzt auschecken?</p>`,[{label:'Später',cls:'modal-btn-cancel',val:'no'},{label:'Jetzt auschecken',cls:'modal-btn-confirm',val:'yes'}]);if(r==='yes'){if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now()});p.doneAt=Date.now();p.currentLocation=null;p.locationSince=null;p.status='done';saveData();renderAll();toast(`${p.vorname} ${p.nachname} — Ausgecheckt!`)}}
+async function showCheckoutReminder(p){const r=await showModal('Checkout-Erinnerung',`<p><strong>${p.vorname} ${p.nachname}</strong> ist seit ${Math.round((Date.now()-p.locationSince)/6e4)} Minuten im Abschluss.</p><p>Jetzt auschecken?</p>`,[{label:'Später',cls:'modal-btn-cancel',val:'no'},{label:'Jetzt auschecken',cls:'modal-btn-confirm',val:'yes'}]);if(r==='yes'){if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined});p.doneAt=Date.now();p.currentLocation=null;p.locationSince=null;p.status='done';saveData();renderAll();toast(`${p.vorname} ${p.nachname} — Ausgecheckt!`)}}
 // ─── TRANSITION ENGINE ────────────────
 // Zentraler Patientenfluss: jede Zuweisung (NFC, Swipe, Drag) läuft hierüber.
 // Einheitliche Kapazitätsprüfung, Journey-Tracking, Timer, Animation & Undo.
@@ -1783,7 +1784,8 @@ const cap=checkRoomCapacity(locId);if(cap.full){if(cap.hard){toast(`⛔ ${cap.na
 // 2) Snapshot für Undo
 const pL=p.currentLocation,pS=p.locationSince,pSt=p.status,pJ=p.journey.length;
 // 3) Journey abschließen
-if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now()});
+const mBy=getCurrentUserName();
+if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:mBy||undefined});
 // 4) Neuen Standort setzen
 p.currentLocation=locId;p.locationSince=Date.now();p.status=pStatus(p);
 // 5) Abschluss-Timer
@@ -1804,7 +1806,7 @@ function animateTransition(locId){const el=document.querySelector(`.dcol[data-lo
 async function assignLoc(pid,locId){const p=patients.find(x=>x.id===pid);if(!p)return;if(p.currentLocation===locId)return;await transitionPatient(pid,locId);openPatientSheet(pid)}
 async function markDone(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const r=await showModal('Auschecken?',`<p><strong>${p.vorname} ${p.nachname}</strong> wirklich auschecken und als fertig markieren?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Ja, Auschecken',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return;closeSheet();
   // Close current journey entry
-  if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now()});
+  if(p.currentLocation&&p.locationSince)p.journey.push({loc:p.currentLocation,enter:p.locationSince,exit:Date.now(),movedBy:getCurrentUserName()||undefined});
   p.doneAt=Date.now();p.currentLocation=null;p.locationSince=null;p.status='done';saveData();renderAll();toast(`${p.vorname} ${p.nachname} — Ausgecheckt!`)}
 async function undoDone(pid){const p=patients.find(x=>x.id===pid);if(!p)return;const r=await showModal('Zurückholen?',`<p><strong>${p.vorname} ${p.nachname}</strong> wieder als aktiv setzen?</p><p style="font-size:13px;color:var(--text2);margin-top:8px">Der Patient wird in den Wartebereich verschoben.</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Ja, zurückholen',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return;p.status='waiting';p.currentLocation='wartebereich';p.locationSince=Date.now();p.doneAt=null;saveData();renderAll();openPatientSheet(pid);toast(`${p.vorname} ${p.nachname} — wieder aktiv`)}
 
