@@ -788,6 +788,9 @@ function migrateTxStatuses(){
 let patients=[],nfcTags={},teamMembers=[],suites=[],timeSlots=[],treatments=[],txStatuses=[],tracks=[];
 let currentView='dashboard',activeFilter='all',activeTrackFilter='all',detectedRoomId=null,lastAction=null;
 let sheetActiveTab='raum',pendingEdits={};
+// Realtime echo suppression: track patient IDs we just saved so we ignore our own Realtime events
+const _recentlySavedPatients=new Map(); // patientId -> timestamp
+const REALTIME_ECHO_WINDOW=3000; // 3 seconds to ignore echoes
 const SUITE_ROOMS=DEFAULT_SUITES_ROOMS,STATIONS=DEFAULT_STATIONS,PAUSES=DEFAULT_PAUSES,ALL_LOCS=[...SUITE_ROOMS,...STATIONS,...PAUSES];
 
 // ═══════════════════════════════════════
@@ -1136,9 +1139,17 @@ function mergeAirtablePatients(atPatients){
   const removedCount=before-patients.length;
   console.log(`Airtable merge: ${newCount} new, ${updateCount} updated, ${removedCount} removed (not in today's data)`);
   if(newCount>0||updateCount>0||removedCount>0){
-    // Save merged data to Supabase
+    // Save ONLY new patients and Stammdaten updates to Supabase
+    // CRITICAL: Do NOT use saveAllToSupabase — that triggers Realtime echoes for ALL patients
+    // which can race with user actions and reset patient status
     if(supaClient&&backendMode==='supabase'){
-      saveAllToSupabase().then(()=>console.log('Airtable-merged data saved to Supabase'));
+      // Only save patients that were newly added from Airtable (they need initial Supabase row)
+      const newAirtablePatients=patients.filter(p=>p.id.startsWith('at-')&&!p.currentLocation&&p.status==='not-arrived');
+      if(newAirtablePatients.length>0){
+        Promise.all(newAirtablePatients.map(p=>savePatientToSupabase(p)))
+          .then(()=>console.log(`Saved ${newAirtablePatients.length} new Airtable patients to Supabase`))
+          .catch(e=>console.error('Airtable patient save failed:',e));
+      }
     }
     renderAll();
   }
@@ -1171,6 +1182,8 @@ async function savePatientToSupabase(p,retry=0){
     };
     const{error}=await supaClient.from('patients').upsert(row,{onConflict:'id'});
     if(error)throw error;
+    // Mark this patient as recently saved so Realtime handler ignores the echo
+    _recentlySavedPatients.set(p.id, Date.now());
     showSyncStatus('synced');return true
   }catch(e){
     console.error('Save patient failed:',e.message||e);
@@ -1197,6 +1210,9 @@ async function saveAllToSupabase(){
     }));
     const{error}=await supaClient.from('patients').upsert(rows,{onConflict:'id'});
     if(error)throw error;
+    // Mark all patients as recently saved to suppress Realtime echoes
+    const now=Date.now();
+    patients.forEach(p=>_recentlySavedPatients.set(p.id,now));
     // Sync rooms
     await saveRoomsToSupabase();
     // Sync treatments
@@ -1474,16 +1490,54 @@ function handleRealtimePatientChange(payload){
   }
   const row=payload.new;
   if(!row)return;
+
+  // ── Echo suppression: skip Realtime events triggered by our own saves ──
+  const savedAt=_recentlySavedPatients.get(row.id);
+  if(savedAt&&(Date.now()-savedAt)<REALTIME_ECHO_WINDOW){
+    console.log('Realtime echo suppressed for',row.id);
+    return; // This is our own write echoing back — skip
+  }
+  _recentlySavedPatients.delete(row.id); // Clean up expired entries
+
   const idx=patients.findIndex(p=>p.id===row.id);
+  const incomingLocationSince=row.location_since?new Date(row.location_since).getTime():null;
+
+  // ── Timestamp guard: don't overwrite newer local state with older Realtime data ──
+  if(idx>=0){
+    const local=patients[idx];
+    const localSince=local.locationSince||0;
+    const remoteSince=incomingLocationSince||0;
+    // If local state has a newer location change, only update Stammdaten (name, program, etc.)
+    // but keep local location/status/journey intact
+    if(localSince>remoteSince&&local.currentLocation){
+      console.log('Realtime: keeping newer local state for',row.id,'(local:',localSince,'remote:',remoteSince,')');
+      // Only update non-location fields (Airtable Stammdaten)
+      local.vorname=row.vorname||local.vorname;
+      local.nachname=row.nachname||local.nachname;
+      local.pid=row.pid||local.pid;
+      local.program=row.program||local.program;
+      local.startzeit=row.startzeit||local.startzeit;
+      local.mfa=row.mfa||local.mfa;
+      local.arzt=row.arzt||local.arzt;
+      local.suite=row.suite||local.suite;
+      local.programmUmfang=row.programm_umfang||local.programmUmfang;
+      local.extraBuchungen=row.extra_buchungen||local.extraBuchungen;
+      local.airtableRoom=row.airtable_room||local.airtableRoom;
+      local.airtableStatus=row.airtable_status||local.airtableStatus;
+      renderAll();return;
+    }
+  }
+
   const mapped={
     id:row.id,pid:row.pid,vorname:row.vorname,nachname:row.nachname,
     program:row.program,startzeit:row.startzeit,mfa:row.mfa,arzt:row.arzt,
     suite:row.suite,track:row.track||null,currentLocation:row.current_location,
-    locationSince:row.location_since?new Date(row.location_since).getTime():null,
+    locationSince:incomingLocationSince,
     status:row.status||'not-arrived',
     journey:row.journey||[],treatments:row.treatments||{},
     programmUmfang:row.programm_umfang||'',extraBuchungen:row.extra_buchungen||'',notizen:row.notizen||'',
-    airtableRecordId:row.airtable_record_id||null,airtableRoom:row.airtable_room||'',airtableStatus:row.airtable_status||''
+    airtableRecordId:row.airtable_record_id||null,airtableRoom:row.airtable_room||'',airtableStatus:row.airtable_status||'',
+    lastMovedBy:row.last_moved_by||''
   };
   // Skip non-Airtable patients (demo data)
   if(!mapped.airtableRecordId&&!mapped.id.startsWith('at-')){return}
