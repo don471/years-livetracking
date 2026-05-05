@@ -285,6 +285,15 @@ body.panel-open{overflow:hidden}
 .admin-btn:active{transform:scale(.95)}
 .admin-btn.primary{background:var(--warm-900);color:var(--mint);border-color:var(--warm-900)}
 .admin-btn.danger{color:var(--red);border-color:var(--red)}
+.mod-toggle{position:relative;width:48px;height:26px;border-radius:13px;background:var(--warm-300);border:none;cursor:pointer;transition:background .2s;flex-shrink:0}
+.mod-toggle.on{background:var(--mint)}
+.mod-toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.mod-toggle.on::after{transform:translateX(22px)}
+.mod-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;transition:border-color .2s}
+.mod-card.enabled{border-color:var(--mint)}
+.mod-sub{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.mod-qe{display:inline-flex;align-items:center;gap:4px;background:var(--warm-100);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;margin:3px 3px 3px 0}
+.mod-qe button{background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;padding:0 0 0 4px;line-height:1}
 .admin-input{padding:10px 14px;border:1px solid var(--border);border-radius:var(--rs);font-size:14px;width:100%;outline:none;margin-bottom:8px;background:#fff}
 .admin-input:focus{border-color:var(--warm-900)}
 .admin-hint{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.4}
@@ -680,7 +689,7 @@ body.panel-open{overflow:hidden}
 // ═══════════════════════════════════════
 // SVG ICONS
 // ═══════════════════════════════════════
-const ICO={smartphone:'<svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',camera:'<svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',settings:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',users:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',grid:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',list:'<svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',check:'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',checkCircle:'<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',x:'<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',trash:'<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',grip:'<svg viewBox="0 0 24 24"><circle cx="9" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1" fill="currentColor" stroke="none"/></svg>',clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',chevDown:'<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',wifi:'<svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',qrcode:'<svg viewBox="0 0 24 24"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4" rx=".5"/><rect x="20" y="14" width="2" height="2" rx=".25"/><rect x="14" y="20" width="2" height="2" rx=".25"/><rect x="18" y="18" width="4" height="4" rx=".5"/></svg>',building:'<svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01"/></svg>',userPlus:'<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',mail:'<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',mapPin:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',couch:'<svg viewBox="0 0 24 24"><path d="M20 9V6a2 2 0 00-2-2H6a2 2 0 00-2 2v3"/><path d="M2 11v4a2 2 0 002 2h16a2 2 0 002-2v-4a2 2 0 00-2-2H4a2 2 0 00-2 2z"/><path d="M4 17v2M20 17v2"/></svg>',hospital:'<svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/><path d="M9 21v-4h6v4M10 9h4M12 7v4"/></svg>',brain:'<svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 015 5c0 .91-.26 1.76-.7 2.5A5 5 0 0120 14a5 5 0 01-4 4.9V22h-2v-3.1A5 5 0 014 14a5 5 0 013.7-4.5A4.97 4.97 0 017 7a5 5 0 015-5z"/></svg>',heart:'<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',wind:'<svg viewBox="0 0 24 24"><path d="M9.59 4.59A2 2 0 1011 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/></svg>',dumbbell:'<svg viewBox="0 0 24 24"><path d="M6.5 6.5h11M6.5 17.5h11M6.5 6.5v11M17.5 6.5v11M4 8v8M20 8v8M2 10v4M22 10v4"/></svg>',stethoscope:'<svg viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 0012 0V4a2 2 0 00-2-2h-1a.2.2 0 10.3.3"/><path d="M8 15v1a6 6 0 006 6 6 6 0 006-6v-4"/><circle cx="20" cy="10" r="2"/></svg>',bike:'<svg viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 100-2 1 1 0 000 2z" fill="currentColor" stroke="none"/><path d="M12 17.5V14l-3-3 4-3 2 3h3"/></svg>',armchair:'<svg viewBox="0 0 24 24"><path d="M19 9V6a2 2 0 00-2-2H7a2 2 0 00-2 2v3"/><path d="M3 11v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 00-2-2H5a2 2 0 00-2 2z"/><path d="M5 16v2M19 16v2"/></svg>',pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',coffee:'<svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',utensils:'<svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20"/><path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>',tag:'<svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',sliders:'<svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',barChart:'<svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',activity:'<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',download:'<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',arrowLeft:'<svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'};
+const ICO={smartphone:'<svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',camera:'<svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',settings:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',users:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',grid:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',list:'<svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',check:'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',checkCircle:'<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',x:'<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',trash:'<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',grip:'<svg viewBox="0 0 24 24"><circle cx="9" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1" fill="currentColor" stroke="none"/></svg>',clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',chevDown:'<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',wifi:'<svg viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',qrcode:'<svg viewBox="0 0 24 24"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4" rx=".5"/><rect x="20" y="14" width="2" height="2" rx=".25"/><rect x="14" y="20" width="2" height="2" rx=".25"/><rect x="18" y="18" width="4" height="4" rx=".5"/></svg>',building:'<svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01"/></svg>',userPlus:'<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',mail:'<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',mapPin:'<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',couch:'<svg viewBox="0 0 24 24"><path d="M20 9V6a2 2 0 00-2-2H6a2 2 0 00-2 2v3"/><path d="M2 11v4a2 2 0 002 2h16a2 2 0 002-2v-4a2 2 0 00-2-2H4a2 2 0 00-2 2z"/><path d="M4 17v2M20 17v2"/></svg>',hospital:'<svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/><path d="M9 21v-4h6v4M10 9h4M12 7v4"/></svg>',brain:'<svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 015 5c0 .91-.26 1.76-.7 2.5A5 5 0 0120 14a5 5 0 01-4 4.9V22h-2v-3.1A5 5 0 014 14a5 5 0 013.7-4.5A4.97 4.97 0 017 7a5 5 0 015-5z"/></svg>',heart:'<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',wind:'<svg viewBox="0 0 24 24"><path d="M9.59 4.59A2 2 0 1011 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/></svg>',dumbbell:'<svg viewBox="0 0 24 24"><path d="M6.5 6.5h11M6.5 17.5h11M6.5 6.5v11M17.5 6.5v11M4 8v8M20 8v8M2 10v4M22 10v4"/></svg>',stethoscope:'<svg viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 0012 0V4a2 2 0 00-2-2h-1a.2.2 0 10.3.3"/><path d="M8 15v1a6 6 0 006 6 6 6 0 006-6v-4"/><circle cx="20" cy="10" r="2"/></svg>',bike:'<svg viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 100-2 1 1 0 000 2z" fill="currentColor" stroke="none"/><path d="M12 17.5V14l-3-3 4-3 2 3h3"/></svg>',armchair:'<svg viewBox="0 0 24 24"><path d="M19 9V6a2 2 0 00-2-2H7a2 2 0 00-2 2v3"/><path d="M3 11v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 00-2-2H5a2 2 0 00-2 2z"/><path d="M5 16v2M19 16v2"/></svg>',pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',coffee:'<svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',utensils:'<svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20"/><path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>',tag:'<svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',sliders:'<svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',barChart:'<svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',activity:'<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',download:'<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',arrowLeft:'<svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',layers:'<svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',fileText:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',messageSquare:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',flask:'<svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6.5L4 18a1 1 0 00.87 1.5h14.26A1 1 0 0020 18l-6-8.5V3"/></svg>',plus:'<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'};
 function ico(n,c){return`<span class="ico ${c||''}">${ICO[n]||''}</span>`}
 const RI={'suite-1':'couch','suite-2':'couch','suite-3':'couch','suite-4':'couch','suite-5':'couch','suite-6':'couch','mixed-room':'hospital',cns:'brain','ruhe-ekg':'heart',bodyraum:'hospital',vald:'dumbbell','sono-arzt':'stethoscope',ergospiro:'bike',abschluss:'check',pause:'coffee',wartebereich:'armchair','pause-ergo':'pause','pause-allg':'coffee',mittagspause:'utensils'};
 function riLookup(id){return RI[id]||(id.startsWith('suite-')?'couch':'mapPin')}
@@ -764,8 +773,8 @@ function loadData(){try{const s=localStorage.getItem('years_tracking');if(s){con
   const isNewDay=savedDay&&savedDay!==todayStr;
   patients=isNewDay?[]:(d.patients||[]);
   if(isNewDay)console.log(`Day change detected (${savedDay} → ${todayStr}): cleared ${(d.patients||[]).length} patients from yesterday`);
-  nfcTags=d.nfcTags||{};teamMembers=d.teamMembers||DEFAULT_TEAM;suites=d.suites||DEFAULT_SUITES;timeSlots=d.timeSlots||DEFAULT_TIMESLOTS;treatments=d.treatments||JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=d.txStatuses||JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=d.tracks||JSON.parse(JSON.stringify(DEFAULT_TRACKS));if(d.suiteRooms){SUITE_ROOMS.length=0;d.suiteRooms.forEach(r=>SUITE_ROOMS.push(r))}if(d.stations){STATIONS.length=0;d.stations.forEach(r=>STATIONS.push(r))}if(d.pauses){PAUSES.length=0;d.pauses.forEach(r=>PAUSES.push(r))}if(!PAUSES.length){DEFAULT_PAUSES.forEach(p=>PAUSES.push({...p}))}rebuildAllLocs();patients.forEach(initPatTreatments);patients.forEach((p,i)=>{if(!p.track&&tracks.length)p.track=tracks[i%tracks.length].id});return}}catch(e){}patients=[];nfcTags={};teamMembers=JSON.parse(JSON.stringify(DEFAULT_TEAM));suites=[...DEFAULT_SUITES];timeSlots=JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));treatments=JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=JSON.parse(JSON.stringify(DEFAULT_TRACKS))}
-function saveData(){try{localStorage.setItem('years_tracking',JSON.stringify({patients,nfcTags,teamMembers,suites,timeSlots,treatments,txStatuses,tracks,suiteRooms:SUITE_ROOMS,stations:STATIONS,pauses:PAUSES,savedAt:Date.now()}));archiveDay()}catch(e){}if(backendMode==='supabase')saveAllToSupabase().catch(e=>console.error('Supabase save failed:',e))}
+  nfcTags=d.nfcTags||{};teamMembers=d.teamMembers||DEFAULT_TEAM;suites=d.suites||DEFAULT_SUITES;timeSlots=d.timeSlots||DEFAULT_TIMESLOTS;treatments=d.treatments||JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=d.txStatuses||JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=d.tracks||JSON.parse(JSON.stringify(DEFAULT_TRACKS));if(d.modules){Object.keys(d.modules).forEach(k=>{if(modules[k])Object.assign(modules[k],d.modules[k])})}if(d.suiteRooms){SUITE_ROOMS.length=0;d.suiteRooms.forEach(r=>SUITE_ROOMS.push(r))}if(d.stations){STATIONS.length=0;d.stations.forEach(r=>STATIONS.push(r))}if(d.pauses){PAUSES.length=0;d.pauses.forEach(r=>PAUSES.push(r))}if(!PAUSES.length){DEFAULT_PAUSES.forEach(p=>PAUSES.push({...p}))}rebuildAllLocs();patients.forEach(initPatTreatments);patients.forEach((p,i)=>{if(!p.track&&tracks.length)p.track=tracks[i%tracks.length].id});return}}catch(e){}patients=[];nfcTags={};teamMembers=JSON.parse(JSON.stringify(DEFAULT_TEAM));suites=[...DEFAULT_SUITES];timeSlots=JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));treatments=JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=JSON.parse(JSON.stringify(DEFAULT_TRACKS))}
+function saveData(){try{localStorage.setItem('years_tracking',JSON.stringify({patients,nfcTags,teamMembers,suites,timeSlots,treatments,txStatuses,tracks,modules,suiteRooms:SUITE_ROOMS,stations:STATIONS,pauses:PAUSES,savedAt:Date.now()}));archiveDay()}catch(e){}if(backendMode==='supabase')saveAllToSupabase().catch(e=>console.error('Supabase save failed:',e))}
 
 // Migrate: ensure Airtable-matching txStatuses exist
 function migrateTxStatuses(){
@@ -786,6 +795,12 @@ function migrateTxStatuses(){
 // STATE
 // ═══════════════════════════════════════
 let patients=[],nfcTags={},teamMembers=[],suites=[],timeSlots=[],treatments=[],txStatuses=[],tracks=[];
+// ── Module System ──
+let modules={
+  doku:{enabled:false,label:'Dokumentation',icon:'fileText',desc:'Patienten-Dokumentation mit Schnelleinträgen',categories:[{id:'vital',name:'Vitaldaten',color:'green',quickEntries:['Blutdruck gemessen','Puls kontrolliert','Temperatur gemessen','SpO2 gemessen']},{id:'med',name:'Medikation',color:'blue',quickEntries:['Infusion angelegt','Medikament verabreicht','Rezept ausgestellt']},{id:'pflege',name:'Pflege',color:'purple',quickEntries:['Verband gewechselt','Patient mobilisiert','Lagerung durchgeführt']},{id:'komm',name:'Kommunikation',color:'orange',quickEntries:['Patient informiert','Angehörige informiert','Arzt informiert']}]},
+  chat:{enabled:false,label:'Chat',icon:'messageSquare',desc:'Stations- und Patienten-Chat',patientChat:true,channels:[]},
+  labor:{enabled:false,label:'Labor',icon:'flask',desc:'Labor-Aufträge und Ergebnisse verfolgen',labTypes:[{id:'blut',name:'Blutbild',expectedMin:45,color:'red'},{id:'crp',name:'CRP',expectedMin:30,color:'orange'},{id:'urin',name:'Urinanalyse',expectedMin:20,color:'yellow'},{id:'schild',name:'Schilddrüse',expectedMin:60,color:'purple'}]}
+};
 let currentView='dashboard',activeFilter='all',activeTrackFilter='all',detectedRoomId=null,lastAction=null;
 let sheetActiveTab='raum',pendingEdits={};
 // Realtime echo suppression: track patient IDs we just saved so we ignore our own Realtime events
@@ -1266,7 +1281,8 @@ async function saveSettingsToSupabase(){
       {key:'nfcTags',value:nfcTags||{},updated_at:new Date().toISOString()},
       {key:'suites',value:suites||[],updated_at:new Date().toISOString()},
       {key:'timeSlots',value:timeSlots||[],updated_at:new Date().toISOString()},
-      {key:'txStatuses',value:txStatuses||[],updated_at:new Date().toISOString()}
+      {key:'txStatuses',value:txStatuses||[],updated_at:new Date().toISOString()},
+      {key:'modules',value:modules||{},updated_at:new Date().toISOString()}
     ];
     const{error}=await supaClient.from('app_settings').upsert(settings,{onConflict:'key'});
     if(error){console.warn('Settings sync skipped (table may not exist):',error.message)}
@@ -1284,6 +1300,9 @@ async function loadSettingsFromSupabase(){
       if(row.key==='suites'&&row.value)suites=row.value;
       if(row.key==='timeSlots'&&row.value)timeSlots=row.value;
       if(row.key==='txStatuses'&&row.value)txStatuses=row.value;
+      if(row.key==='modules'&&row.value){
+        Object.keys(row.value).forEach(k=>{if(modules[k])Object.assign(modules[k],row.value[k])});
+      }
     });
   }catch(e){console.warn('loadSettingsFromSupabase error:',e)}
 }
@@ -1387,7 +1406,71 @@ function handleRealtimeSettingsChange(payload){
   if(row.key==='suites'&&row.value)suites=row.value;
   if(row.key==='timeSlots'&&row.value)timeSlots=row.value;
   if(row.key==='txStatuses'&&row.value)txStatuses=row.value;
+  if(row.key==='modules'&&row.value){
+    // Merge incoming module config with defaults (preserve structure)
+    Object.keys(row.value).forEach(k=>{if(modules[k])Object.assign(modules[k],row.value[k])});
+  }
   renderAll()
+}
+
+// ── Module helper functions ──
+function isModuleEnabled(modId){return modules[modId]&&modules[modId].enabled}
+async function toggleModule(modId){
+  if(!modules[modId])return;
+  modules[modId].enabled=!modules[modId].enabled;
+  saveData();await syncSettings('settings');renderAll();renderAdmin();
+  toast(modules[modId].label+' '+(modules[modId].enabled?'aktiviert':'deaktiviert'));
+}
+async function addDokuCategory(){
+  const r=await showModal('Neue Kategorie','<input class="admin-input" id="modalCatName" placeholder="Name (z.B. Vitaldaten)" style="margin-top:4px">',[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Erstellen',cls:'modal-btn-confirm',val:'_input'}]);
+  if(!r||r==='no')return;
+  const id=r.toLowerCase().replace(/[^a-z0-9äöüß]/g,'-').replace(/-+/g,'-');
+  const colors=['green','blue','purple','orange','teal','red'];
+  const color=colors[modules.doku.categories.length%colors.length];
+  modules.doku.categories.push({id,name:r,color,quickEntries:[]});
+  saveData();await syncSettings('settings');renderAdmin();toast('Kategorie "'+r+'" erstellt');
+}
+async function removeDokuCategory(catId){
+  const cat=modules.doku.categories.find(c=>c.id===catId);
+  if(!cat)return;
+  const r=await showModal('Kategorie löschen?','<p><strong>'+cat.name+'</strong> und alle Schnelleinträge entfernen?</p>',[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Löschen',cls:'modal-btn-danger',val:'yes'}]);
+  if(r!=='yes')return;
+  modules.doku.categories=modules.doku.categories.filter(c=>c.id!==catId);
+  saveData();await syncSettings('settings');renderAdmin();toast(cat.name+' entfernt');
+}
+async function addQuickEntry(catId){
+  const cat=modules.doku.categories.find(c=>c.id===catId);
+  if(!cat)return;
+  const r=await showModal('Schnelleintrag','<input class="admin-input" id="modalQE" placeholder="z.B. Blutdruck gemessen" style="margin-top:4px">',[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Hinzufügen',cls:'modal-btn-confirm',val:'_input'}]);
+  if(!r||r==='no')return;
+  cat.quickEntries.push(r);
+  saveData();await syncSettings('settings');renderAdmin();toast('Schnelleintrag hinzugefügt');
+}
+async function removeQuickEntry(catId,idx){
+  const cat=modules.doku.categories.find(c=>c.id===catId);
+  if(!cat)return;
+  cat.quickEntries.splice(idx,1);
+  saveData();await syncSettings('settings');renderAdmin();
+}
+async function addLabType(){
+  const r=await showModal('Neuer Labor-Typ','<input class="admin-input" id="modalLabName" placeholder="Name (z.B. Blutbild)" style="margin-top:4px"><input class="admin-input" id="modalLabMin" type="number" placeholder="Erwartete Dauer (Minuten)" value="45" style="margin-top:4px">',[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Erstellen',cls:'modal-btn-confirm',val:'_input'}]);
+  if(!r||r==='no')return;
+  const nameVal=r;const minEl=document.getElementById('modalLabMin');
+  const mins=minEl?parseInt(minEl.value)||45:45;
+  const id=nameVal.toLowerCase().replace(/[^a-z0-9äöüß]/g,'-').replace(/-+/g,'-');
+  const colors=['red','orange','yellow','purple','blue','green','teal'];
+  const color=colors[modules.labor.labTypes.length%colors.length];
+  modules.labor.labTypes.push({id,name:nameVal,expectedMin:mins,color});
+  saveData();await syncSettings('settings');renderAdmin();toast('Labor-Typ "'+nameVal+'" erstellt');
+}
+function addDokuEntry(pid,catId,text){
+  toast(`${text} — Doku-Speicherung wird in Phase 2 implementiert`);
+}
+async function removeLabType(ltId){
+  const lt=modules.labor.labTypes.find(l=>l.id===ltId);
+  if(!lt)return;
+  modules.labor.labTypes=modules.labor.labTypes.filter(l=>l.id!==ltId);
+  saveData();await syncSettings('settings');renderAdmin();toast(lt.name+' entfernt');
 }
 
 function handleRealtimeTrackChange(payload){
@@ -1674,7 +1757,7 @@ function renderPatients(){const q=(document.getElementById('patSearchInput').val
 function openPatientSheet(pid){const p=patients.find(x=>x.id===pid);if(!p)return;pendingEdits={};document.getElementById('sheetTitle').textContent=`${p.vorname} ${p.nachname}`;let h='';const s=pStatus(p);let sb='';if(s==='in-room')sb=`<span class="badge b-room">${locName(p.currentLocation)}</span>`;else if(s==='pause')sb=`<span class="badge b-pause">${locName(p.currentLocation)}</span>`;else if(s==='waiting')sb='<span class="badge b-wait">Wartend</span>';else if(s==='done')sb='<span class="badge b-done">Fertig</span>';else sb='<span class="badge b-new">Nicht da</span>';
 h+=`<div style="padding:2px 20px 6px;display:flex;align-items:center;gap:8px"><span class="tag">#${p.id}</span>${sb}${p.locationSince?`<span style="font-size:12px;color:var(--text2)">${fmtDur(p.locationSince)}</span>`:''}</div>`;
 if(s==='not-arrived')h+=`<div style="padding:4px 20px 8px"><button class="admin-btn primary" style="width:100%;padding:14px;font-size:15px" onclick="checkInPatient('${pid}')">${ico('checkCircle','ico-sm')} Patient ist angekommen — Einchecken</button></div>`;
-h+=`<div class="sheet-tabs"><button class="sheet-tab ${sheetActiveTab==='raum'?'active':''}" onclick="switchSheetTab('raum','${pid}')">Raum</button><button class="sheet-tab ${sheetActiveTab==='behandlungen'?'active':''}" onclick="switchSheetTab('behandlungen','${pid}')">Behandlungen</button><button class="sheet-tab ${sheetActiveTab==='patient'?'active':''}" onclick="switchSheetTab('patient','${pid}')">Patient</button><button class="sheet-tab ${sheetActiveTab==='verweildauer'?'active':''}" onclick="switchSheetTab('verweildauer','${pid}')">Verweildauer</button><button class="sheet-tab ${sheetActiveTab==='verlauf'?'active':''}" onclick="switchSheetTab('verlauf','${pid}')">Verlauf</button></div>`;
+h+=`<div class="sheet-tabs"><button class="sheet-tab ${sheetActiveTab==='raum'?'active':''}" onclick="switchSheetTab('raum','${pid}')">Raum</button><button class="sheet-tab ${sheetActiveTab==='behandlungen'?'active':''}" onclick="switchSheetTab('behandlungen','${pid}')">Behandlungen</button>${isModuleEnabled('doku')?`<button class="sheet-tab ${sheetActiveTab==='doku'?'active':''}" onclick="switchSheetTab('doku','${pid}')">${ico('fileText','ico-sm')} Doku</button>`:''}<button class="sheet-tab ${sheetActiveTab==='patient'?'active':''}" onclick="switchSheetTab('patient','${pid}')">Patient</button>${isModuleEnabled('labor')?`<button class="sheet-tab ${sheetActiveTab==='labor'?'active':''}" onclick="switchSheetTab('labor','${pid}')">${ico('flask','ico-sm')} Labor</button>`:''}<button class="sheet-tab ${sheetActiveTab==='verweildauer'?'active':''}" onclick="switchSheetTab('verweildauer','${pid}')">Verweildauer</button><button class="sheet-tab ${sheetActiveTab==='verlauf'?'active':''}" onclick="switchSheetTab('verlauf','${pid}')">Verlauf</button>${isModuleEnabled('chat')&&modules.chat.patientChat?`<button class="sheet-tab ${sheetActiveTab==='chat'?'active':''}" onclick="switchSheetTab('chat','${pid}')">${ico('messageSquare','ico-sm')} Chat</button>`:''}</div>`;
 // TAB: RAUM
 const rbtn=(r,pid,cur,extra)=>{const lp=patients.filter(x=>x.currentLocation===r.id);const c=lp.length;const isAbschl=r.id==='abschluss';const isCur=cur===r.id;const tc=(isCur&&!isAbschl&&p.locationSince)?timeColor(r.id,p.locationSince):'';const colStyle=tc==='red'?'border-color:var(--red);background:var(--red-bg)':tc==='orange'?'border-color:var(--orange);background:var(--orange-bg)':'';const timeStr=(isCur&&!isAbschl&&p.locationSince)?fmtDur(p.locationSince):'';return`<button class="room-btn ${extra||''} ${isCur?'current':''}" style="${colStyle}" onclick="assignLoc('${pid}','${r.id}')"><span class="ri">${roomIco(r.id)}</span><span class="rn">${r.name}</span><span class="rc">${c} Pat.${timeStr?` · <span class="${tc?'t-'+tc:''}">${timeStr}</span>`:''}</span></button>`};
 const pTrack=tracks.find(t=>t.id===p.track);
@@ -1737,7 +1820,43 @@ h+=`</div><div class="field-save-bar" id="fieldSaveBar"><button class="admin-btn
 // TAB: VERWEILDAUER
 h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verweildauer'?'active':''}">${buildVerweildauer(p)}</div>`;
 // TAB: VERLAUF
-h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verlauf'?'active':''}">`;if(p.journey.length||p.currentLocation){h+=`<div class="journey"><div class="journey-title">Heutiger Verlauf</div><div class="jtl">`;p.journey.forEach(st=>{if(st.type==='track-change'){const fromT=tracks.find(t=>t.id===st.from);const toT=tracks.find(t=>t.id===st.to);const fromL=fromT?fromT.name:'Kein Track';const toL=toT?toT.name:'—';const fromDot=fromT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fromT.color};margin-right:2px"></span>`:'';const toDot=toT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${toT.color};margin-right:2px"></span>`:'';h+=`<div class="jstep" style="background:var(--warm-50);border-left:3px solid ${toT?toT.color:'var(--border)'}"><span class="jstep-room" style="font-size:12px">${fromDot}${fromL} → ${toDot}${toL}</span><div class="jstep-time">${fmtClock(st.at)} · Track gewechselt</div></div>`}else{const byUser=st.movedBy?` · ${st.movedBy}`:'';h+=`<div class="jstep"><span class="jstep-room">${roomIco(st.loc,'ico-sm')} ${locName(st.loc)}</span><div class="jstep-time">${fmtClock(st.enter)} – ${fmtClock(st.exit)} · ${fmtDurMM(st.enter,st.exit)}${byUser}</div></div>`}});if(p.currentLocation){const tc=timeColor(p.currentLocation,p.locationSince);const tcCls=tc==='red'?'jstep-red':tc==='orange'?'jstep-orange':'now';const curBy=p.lastMovedBy?` · ${p.lastMovedBy}`:'';h+=`<div class="jstep ${tcCls}"><span class="jstep-room">${roomIco(p.currentLocation,'ico-sm')} ${locName(p.currentLocation)}</span><div class="jstep-time">seit ${fmtClock(p.locationSince)} · ${fmtDur(p.locationSince)}${curBy}</div></div>`};h+='</div></div>'}else h+=`<div class="empty" style="padding:24px"><div class="empty-icon">${ico('clock','ico-xl')}</div><div class="empty-text">Noch kein Verlauf</div></div>`;h+='</div>';
+h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verlauf'?'active':''}">`;if(p.journey.length||p.currentLocation){h+=`<div class="journey"><div class="journey-title">Heutiger Verlauf</div><div class="jtl">`;p.journey.forEach(st=>{if(st.type==='track-change'){const fromT=tracks.find(t=>t.id===st.from);const toT=tracks.find(t=>t.id===st.to);const fromL=fromT?fromT.name:'Kein Track';const toL=toT?toT.name:'—';const fromDot=fromT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fromT.color};margin-right:2px"></span>`:'';const toDot=toT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${toT.color};margin-right:2px"></span>`:'';h+=`<div class="jstep" style="background:var(--warm-100);border-left:3px solid ${toT?toT.color:'var(--border)'}"><span class="jstep-room" style="font-size:12px">${fromDot}${fromL} → ${toDot}${toL}</span><div class="jstep-time">${fmtClock(st.at)} · Track gewechselt</div></div>`}else{const byUser=st.movedBy?` · ${st.movedBy}`:'';h+=`<div class="jstep"><span class="jstep-room">${roomIco(st.loc,'ico-sm')} ${locName(st.loc)}</span><div class="jstep-time">${fmtClock(st.enter)} – ${fmtClock(st.exit)} · ${fmtDurMM(st.enter,st.exit)}${byUser}</div></div>`}});if(p.currentLocation){const tc=timeColor(p.currentLocation,p.locationSince);const tcCls=tc==='red'?'jstep-red':tc==='orange'?'jstep-orange':'now';const curBy=p.lastMovedBy?` · ${p.lastMovedBy}`:'';h+=`<div class="jstep ${tcCls}"><span class="jstep-room">${roomIco(p.currentLocation,'ico-sm')} ${locName(p.currentLocation)}</span><div class="jstep-time">seit ${fmtClock(p.locationSince)} · ${fmtDur(p.locationSince)}${curBy}</div></div>`};h+='</div></div>'}else h+=`<div class="empty" style="padding:24px"><div class="empty-icon">${ico('clock','ico-xl')}</div><div class="empty-text">Noch kein Verlauf</div></div>`;h+='</div>';
+// TAB: DOKU (module)
+if(isModuleEnabled('doku')){
+  h+=`<div class="sheet-tab-panel ${sheetActiveTab==='doku'?'active':''}"><div style="padding:12px 20px">`;
+  h+=`<div style="font-size:14px;font-weight:700;margin-bottom:12px">Schnelleinträge</div>`;
+  (modules.doku.categories||[]).forEach(cat=>{
+    const dotColor=cat.color==='green'?'var(--green)':cat.color==='blue'?'var(--blue)':cat.color==='purple'?'#8b5cf6':cat.color==='orange'?'var(--orange)':cat.color==='teal'?'var(--mint)':cat.color==='red'?'var(--red)':'var(--text2)';
+    h+=`<div style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block"></span><strong style="font-size:13px">${cat.name}</strong></div><div style="display:flex;flex-wrap:wrap;gap:6px">`;
+    (cat.quickEntries||[]).forEach(qe=>{
+      h+=`<button class="mod-qe" style="cursor:pointer;border-color:var(--mint)" onclick="addDokuEntry('${pid}','${cat.id}','${qe.replace(/'/g,"\\'")}')">${qe}</button>`;
+    });
+    h+=`</div></div>`;
+  });
+  h+=`<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)"><div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text2)">Einträge heute</div><div id="dokuEntries" style="font-size:13px;color:var(--text2)">Noch keine Einträge</div></div>`;
+  h+=`</div></div>`;
+}
+// TAB: LABOR (module)
+if(isModuleEnabled('labor')){
+  h+=`<div class="sheet-tab-panel ${sheetActiveTab==='labor'?'active':''}"><div style="padding:12px 20px">`;
+  h+=`<div style="font-size:14px;font-weight:700;margin-bottom:12px">Labor-Aufträge</div>`;
+  (modules.labor.labTypes||[]).forEach(lt=>{
+    const dotColor=lt.color==='red'?'var(--red)':lt.color==='orange'?'var(--orange)':lt.color==='yellow'?'#eab308':lt.color==='purple'?'#8b5cf6':lt.color==='blue'?'var(--blue)':lt.color==='green'?'var(--green)':'var(--text2)';
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--warm-100);border-radius:8px;margin-bottom:6px">
+      <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block"></span><strong style="font-size:13px">${lt.name}</strong><span style="font-size:12px;color:var(--text2)">ca. ${lt.expectedMin} min</span></span>
+      <button class="mod-qe" style="cursor:pointer;border-color:var(--mint)" onclick="toast('Labor-Auftrag wird in Phase 4 implementiert')">Anfordern</button>
+    </div>`;
+  });
+  h+=`<p style="font-size:12px;color:var(--text2);margin-top:12px">Vollständige Labor-Verwaltung wird in Phase 4 freigeschaltet.</p>`;
+  h+=`</div></div>`;
+}
+// TAB: CHAT (module)
+if(isModuleEnabled('chat')&&modules.chat.patientChat){
+  h+=`<div class="sheet-tab-panel ${sheetActiveTab==='chat'?'active':''}"><div style="padding:12px 20px">`;
+  h+=`<div style="font-size:14px;font-weight:700;margin-bottom:12px">${ico('messageSquare','ico-sm')} Patienten-Chat</div>`;
+  h+=`<div class="empty" style="padding:24px"><div class="empty-icon">${ico('messageSquare','ico-xl')}</div><div class="empty-text">Chat wird in Phase 3 implementiert</div></div>`;
+  h+=`</div></div>`;
+}
 document.getElementById('sheetContent').innerHTML=h;document.getElementById('overlay').classList.add('open');document.getElementById('sheet').classList.add('open');document.body.classList.add('panel-open')}
 function switchSheetTab(t,pid){sheetActiveTab=t;openPatientSheet(pid)}
 function fR(l,c){return`<div class="field-row"><div class="field-label">${l}</div><div class="field-value">${c}</div></div>`}
@@ -2173,7 +2292,7 @@ function aggregateSnapshots(snaps){if(!snaps.length)return null;if(snaps.length=
 function mergeRoomTimes(snaps){const merged={};snaps.forEach(s=>{if(!s.roomTimes)return;Object.keys(s.roomTimes).forEach(lid=>{if(!merged[lid])merged[lid]={total:0,visits:0,maxStay:0};merged[lid].total+=s.roomTimes[lid].total;merged[lid].visits+=s.roomTimes[lid].visits;merged[lid].maxStay=Math.max(merged[lid].maxStay,s.roomTimes[lid].maxStay)})});return merged}
 function exportStatsCSV(){const snaps=getStatSnapshots();if(!snaps.length){toast('Keine Daten für Export');return}const rows=[['Datum','Patienten','Abgeschlossen','Ø Verspätung (min)','Ø Durchlaufzeit (min)','Ø Wartezeit (min)','Behandlungsquote (%)']];snaps.forEach(s=>{rows.push([s.date,s.patTotal,s.patFinished,Math.round(s.avgDelay),Math.round(s.avgTotal/6e4),Math.round(s.avgPause/6e4),s.txPct])});const csv=rows.map(r=>r.join(';')).join('\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='years-stats-'+dateKey(statDate)+'.csv';a.click();URL.revokeObjectURL(url);toast('CSV exportiert')}
 function renderAdmin(){const baseUrl=window.location.origin+window.location.pathname;
-const tabs=[{id:'stats',icon:'barChart',label:'Dashboard'},{id:'tracks',icon:'grid',label:'Tracks'},{id:'rooms',icon:'building',label:'Räume'},{id:'treatments',icon:'stethoscope',label:'Untersuchungen'},{id:'ops',icon:'settings',label:'Betrieb'},{id:'backend',icon:'wifi',label:'Backend'},{id:'data',icon:'trash',label:'Daten'}];
+const tabs=[{id:'stats',icon:'barChart',label:'Dashboard'},{id:'modules',icon:'layers',label:'Module'},{id:'tracks',icon:'grid',label:'Tracks'},{id:'rooms',icon:'building',label:'Räume'},{id:'treatments',icon:'stethoscope',label:'Untersuchungen'},{id:'ops',icon:'settings',label:'Betrieb'},{id:'backend',icon:'wifi',label:'Backend'},{id:'data',icon:'trash',label:'Daten'}];
 document.getElementById('adminTabs').innerHTML=tabs.map(t=>`<button class="admin-tab ${adminActiveTab===t.id?'active':''}" onclick="switchAdminTab('${t.id}')"><span class="admin-tab-icon">${ico(t.icon,'ico-sm')}</span>${t.label}</button>`).join('');
 let h='';
 // === TAB: DASHBOARD ===
@@ -2228,6 +2347,84 @@ if(patDet.length){h+=`<div class="stat-section"><div class="stat-section-title">
 patDet.sort((a,b)=>b.total-a.total).forEach(p=>{h+=`<tr><td><strong>${p.name}</strong><br><span style="font-size:11px;color:var(--text2)">#${p.pid}</span></td><td>${p.program}</td><td>${fm(p.total)}</td><td>${fm(p.pause)}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="stat-bar-bg"><div class="stat-bar" style="width:${p.progress}%;background:var(--green)"></div></div><span style="font-size:12px;font-weight:600">${p.progress}%</span></div></td><td><span style="font-size:12px">${p.loc}</span></td></tr>`});
 h+=`</tbody></table></div></div>`}
 }
+}
+// === TAB: MODULE ===
+if(adminActiveTab==='modules'){
+h+=`<p class="admin-hint">Module erweitern das Livetracking um zusätzliche Funktionen. Aktivierte Module erscheinen in der Patientenkarte und Navigation.</p>`;
+Object.keys(modules).forEach(modId=>{
+  const m=modules[modId];
+  const iconKey=m.icon||'sliders';
+  h+=`<div class="mod-card ${m.enabled?'enabled':''}">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="mod-toggle ${m.enabled?'on':''}" onclick="toggleModule('${modId}')"></button>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          ${ico(iconKey,'ico-sm')}
+          <strong style="font-size:15px">${m.label}</strong>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px">${m.desc}</div>
+      </div>
+    </div>`;
+  // Sub-settings only when enabled
+  if(m.enabled){
+    // === DOKU sub-settings ===
+    if(modId==='doku'){
+      h+=`<div class="mod-sub">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <strong style="font-size:13px">Kategorien &amp; Schnelleinträge</strong>
+          <button class="btn-sm" onclick="addDokuCategory()" style="font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer">${ico('plus','ico-sm')} Kategorie</button>
+        </div>`;
+      (m.categories||[]).forEach(cat=>{
+        const dotColor=cat.color==='green'?'var(--green)':cat.color==='blue'?'var(--blue)':cat.color==='purple'?'#8b5cf6':cat.color==='orange'?'var(--orange)':cat.color==='teal'?'var(--mint)':cat.color==='red'?'var(--red)':'var(--text2)';
+        h+=`<div style="margin-bottom:12px;padding:10px;background:var(--warm-100);border-radius:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="display:flex;align-items:center;gap:6px">
+              <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block"></span>
+              <strong style="font-size:13px">${cat.name}</strong>
+            </span>
+            <button onclick="removeDokuCategory('${cat.id}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:18px" title="Kategorie löschen">&times;</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:0">`;
+        (cat.quickEntries||[]).forEach((qe,qi)=>{
+          h+=`<span class="mod-qe">${qe}<button onclick="removeQuickEntry('${cat.id}',${qi})" title="Entfernen">&times;</button></span>`;
+        });
+        h+=`<button class="mod-qe" onclick="addQuickEntry('${cat.id}')" style="cursor:pointer;color:var(--mint);border-style:dashed">${ico('plus','ico-sm')} Eintrag</button>`;
+        h+=`</div></div>`;
+      });
+      h+=`</div>`;
+    }
+    // === CHAT sub-settings ===
+    if(modId==='chat'){
+      h+=`<div class="mod-sub">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <input type="checkbox" id="chatPatToggle" ${m.patientChat?'checked':''} onchange="modules.chat.patientChat=this.checked;saveData();syncSettings('settings')">
+          <label for="chatPatToggle" style="font-size:13px">Patienten-Chat in Patientenkarte anzeigen</label>
+        </div>
+        <p style="font-size:12px;color:var(--text2);margin:0">Stations-Chat ist immer verfügbar wenn das Modul aktiv ist.</p>
+      </div>`;
+    }
+    // === LABOR sub-settings ===
+    if(modId==='labor'){
+      h+=`<div class="mod-sub">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <strong style="font-size:13px">Labor-Typen</strong>
+          <button class="btn-sm" onclick="addLabType()" style="font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer">${ico('plus','ico-sm')} Labor-Typ</button>
+        </div>`;
+      (m.labTypes||[]).forEach(lt=>{
+        const dotColor=lt.color==='red'?'var(--red)':lt.color==='orange'?'var(--orange)':lt.color==='yellow'?'#eab308':lt.color==='purple'?'#8b5cf6':lt.color==='blue'?'var(--blue)':lt.color==='green'?'var(--green)':lt.color==='teal'?'var(--mint)':'var(--text2)';
+        h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--warm-100);border-radius:8px;margin-bottom:6px">
+          <span style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block"></span>
+            <span style="font-size:13px"><strong>${lt.name}</strong> <span style="color:var(--text2)">— ca. ${lt.expectedMin} min</span></span>
+          </span>
+          <button onclick="removeLabType('${lt.id}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:18px" title="Labor-Typ löschen">&times;</button>
+        </div>`;
+      });
+      h+=`</div>`;
+    }
+  }
+  h+=`</div>`;
+});
 }
 // === TAB: TRACKS ===
 if(adminActiveTab==='tracks'){
