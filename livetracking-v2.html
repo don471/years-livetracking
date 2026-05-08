@@ -1808,7 +1808,8 @@ if(sollZeit){
   const sollStr=fmtStartzeit(sollZeit);
   const istStr=istZeit?fmtStartzeit(istZeit):'—';
   const diffMin=istZeit?startzeitDiffMin(sollZeit,istZeit):null;
-  const diffTag=diffMin!==null?(diffMin>5?`<span style="color:var(--red);font-weight:600">+${diffMin} min</span>`:diffMin<-2?`<span style="color:var(--green);font-weight:600">${diffMin} min</span>`:`<span style="color:var(--green)">pünktlich</span>`):'';
+  const fmtDiff=m=>{const abs=Math.abs(m);if(abs>=60){const h=Math.floor(abs/60);const r=abs%60;return r?`${h}h ${r}min`:`${h}h`}return`${abs} min`};
+  const diffTag=diffMin!==null?(diffMin>5?`<span style="color:var(--red);font-weight:600">+${fmtDiff(diffMin)}</span>`:diffMin<-2?`<span style="color:var(--green);font-weight:600">-${fmtDiff(diffMin)}</span>`:`<span style="color:var(--green)">pünktlich</span>`):'';
   zeitDisplay=`<div class="field-static" style="display:flex;align-items:center;gap:8px"><span>Soll: ${sollStr}</span><span style="color:var(--text2)">·</span><span>Ist: ${istStr}</span>${diffTag?`<span style="color:var(--text2)">·</span>${diffTag}`:''}</div>`;
 }
 const atStatus=p.airtableStatus||'';
