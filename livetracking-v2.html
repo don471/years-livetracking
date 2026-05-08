@@ -1811,10 +1811,6 @@ if(sollZeit){
   const diffTag=diffMin!==null?(diffMin>5?`<span style="color:var(--red);font-weight:600">+${diffMin} min</span>`:diffMin<-2?`<span style="color:var(--green);font-weight:600">${diffMin} min</span>`:`<span style="color:var(--green)">pünktlich</span>`):'';
   zeitDisplay=`<div class="field-static" style="display:flex;align-items:center;gap:8px"><span>Soll: ${sollStr}</span><span style="color:var(--text2)">·</span><span>Ist: ${istStr}</span>${diffTag?`<span style="color:var(--text2)">·</span>${diffTag}`:''}</div>`;
 }
-// Airtable room vs livetracking room
-const atRoom=p.airtableRoom||'';
-const ltRoom=p.currentLocation?locName(p.currentLocation):'—';
-const atLastRoom=p.airtableLastRoom||'';
 const atStatus=p.airtableStatus||'';
 h+=`<div class="sheet-tab-panel ${sheetActiveTab==='patient'?'active':''}"><div class="field-grid">`;
 // Airtable-sourced fields (read-only section)
@@ -1826,8 +1822,6 @@ h+=fR('Extra Buchungen',`<div class="field-static">${p.extraBuchungen||'—'}</d
 h+=fR('Arzt',`<div class="field-static">${(p.arzt&&!p.arzt.startsWith('rec'))?p.arzt:'—'}</div>`);
 h+=fR('Startzeit',zeitDisplay||`<div class="field-static">${sollZeit||'—'}</div>`);
 h+=fR('Airtable Status',`<div class="field-static">${atStatus||'—'}</div>`);
-h+=fR('Airtable Raum',`<div class="field-static" style="display:flex;align-items:center;gap:6px">${atRoom||'—'}${atRoom&&ltRoom!=='—'&&atRoom!==ltRoom?`<span style="color:var(--text2)">→</span><span style="color:var(--orange)">LT: ${ltRoom}</span>`:''}</div>`);
-if(atLastRoom)h+=fR('Letzter Raum',`<div class="field-static">${atLastRoom}</div>`);
 // Editable section
 h+=`<div style="padding:8px 0 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--text2);border-bottom:1px solid var(--border);margin-bottom:2px">Livetracking</div>`;
 h+=fR('YEARS-ID',`<div class="field-static" style="font-family:monospace">${p.id}</div>`);
