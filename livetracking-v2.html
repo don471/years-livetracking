@@ -1107,8 +1107,8 @@ function mergeAirtablePatients(atPatients){
       existing.nachname=at.nachname||existing.nachname;
       existing.pid=at.pid||existing.pid;
       existing.suite=at.suite||existing.suite;
-      existing.arzt=(at.arzt&&!at.arzt.startsWith('rec'))?at.arzt:(existing.arzt&&existing.arzt.startsWith('rec')?'':existing.arzt);
-      existing.mfa=(at.mfa&&!at.mfa.startsWith('rec'))?at.mfa:(existing.mfa&&existing.mfa.startsWith('rec')?'':existing.mfa);
+      if(at.arzt)existing.arzt=at.arzt;
+      if(at.mfa)existing.mfa=at.mfa;
       existing.program=at.program||existing.program;
       existing.programmUmfang=at.programm_umfang||existing.programmUmfang;
       existing.extraBuchungen=at.extra_buchungen||existing.extraBuchungen;
@@ -1139,7 +1139,7 @@ function mergeAirtablePatients(atPatients){
         id:'at-'+at.airtable_record_id,
         airtableRecordId:at.airtable_record_id,
         vorname:at.vorname,nachname:at.nachname,pid:at.pid,
-        suite:at.suite,arzt:(at.arzt&&!at.arzt.startsWith('rec'))?at.arzt:'',mfa:(at.mfa&&!at.mfa.startsWith('rec'))?at.mfa:'',
+        suite:at.suite,arzt:at.arzt||'',mfa:at.mfa||'',
         program:at.program,programmUmfang:at.programm_umfang||'',
         extraBuchungen:at.extra_buchungen||'',
         startzeit:at.startzeit,
@@ -1797,8 +1797,12 @@ h+=`${s==='done'?`<div class="room-grid" style="grid-template-columns:1fr"><butt
 // TAB: BEHANDLUNGEN
 h+=`<div class="sheet-tab-panel ${sheetActiveTab==='behandlungen'?'active':''}"><div style="padding:8px 20px">${buildBehandlungen(p)}</div></div>`;
 // TAB: PATIENT (editable with save)
-const mfaOpts=[...new Set(teamMembers.filter(m=>m.role==='mfa').map(m=>m.name))];
-const arztOpts=[...new Set(teamMembers.filter(m=>m.role==='arzt').map(m=>m.name))];
+// Collect all known MFA/Arzt names: team members + all Airtable values from today's patients
+const allMfaNames=new Set(teamMembers.filter(m=>m.role==='mfa').map(m=>m.name));
+const allArztNames=new Set(teamMembers.filter(m=>m.role==='arzt').map(m=>m.name));
+patients.forEach(pp=>{if(pp.mfa&&!pp.mfa.startsWith('rec'))allMfaNames.add(pp.mfa);if(pp.arzt&&!pp.arzt.startsWith('rec'))allArztNames.add(pp.arzt)});
+const mfaOpts=[...allMfaNames].sort();
+const arztOpts=[...allArztNames].sort();
 const progOpts=['Core','Executive','Premium','Basic'];
 const trackSelectHtml=`<div class="field-row"><div class="field-label">Track</div><div class="field-value"><select class="field-select" data-key="track" onchange="markFieldDirty(this,'${pid}')"><option value="">—</option>${tracks.map(t=>`<option value="${t.id}"${t.id===p.track?' selected':''}>${t.name}</option>`).join('')}</select></div></div>`;
 // Build Soll vs Ist Startzeit display
@@ -1820,7 +1824,6 @@ h+=fR('PID',`<div class="field-static">${p.pid||'—'}</div>`);
 h+=fR('Programm',`<div class="field-static">${p.program||'—'}</div>`);
 h+=fR('Programm Umfang',`<div class="field-static">${p.programmUmfang||'—'}</div>`);
 h+=fR('Extra Buchungen',`<div class="field-static">${p.extraBuchungen||'—'}</div>`);
-h+=fR('Arzt',`<div class="field-static">${(p.arzt&&!p.arzt.startsWith('rec'))?p.arzt:'—'}</div>`);
 h+=fR('Startzeit',zeitDisplay||`<div class="field-static">${sollZeit||'—'}</div>`);
 h+=fR('Airtable Status',`<div class="field-static">${atStatus||'—'}</div>`);
 // Editable section
@@ -1828,7 +1831,8 @@ h+=`<div style="padding:8px 0 2px;font-size:10px;font-weight:700;text-transform:
 h+=fR('YEARS-ID',`<div class="field-static" style="font-family:monospace">${p.id}</div>`);
 h+=trackSelectHtml;
 h+=fRS(pid,'suite','Suite',p.suite,suites);
-h+=fRS(pid,'mfa','MFA',p.mfa||'',mfaOpts);
+h+=fRS(pid,'arzt','Arzt',p.arzt&&!p.arzt.startsWith('rec')?p.arzt:'',arztOpts);
+h+=fRS(pid,'mfa','MFA',p.mfa&&!p.mfa.startsWith('rec')?p.mfa:'',mfaOpts);
 h+=fRI(pid,'notizen','Notizen',p.notizen||'');
 h+=`</div><div class="field-save-bar" id="fieldSaveBar"><button class="admin-btn" onclick="cancelPatEdits('${pid}')">Abbrechen</button><button class="admin-btn primary" onclick="confirmPatEdits('${pid}')">Änderungen speichern</button></div></div>`;
 // TAB: VERWEILDAUER
@@ -2058,7 +2062,7 @@ function renderChips(lp,loc,showT){
     const pct=patProgress(p);
     const trk=tracks.find(t=>t.id===p.track);
     const trkDot=trk?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${trk.color};margin-right:3px" title="${trk.name}"></span>`:'';
-    return`<div class="dchip" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="touchDragStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)"><div class="dchip-grip">${ico('grip','ico-sm')}</div><div style="flex:1;margin-left:6px;cursor:pointer" onclick="openPatientSheet('${p.id}')"><div class="dchip-name">${trkDot}${p.vorname} ${p.nachname}</div><div class="dchip-meta">#${p.pid} · ${p.suite}${(p.arzt&&!p.arzt.startsWith('rec'))?' · <span style="color:var(--warm-500)">Arzt: '+p.arzt+'</span>':''}${(p.mfa&&!p.mfa.startsWith('rec'))?' · <span style="color:var(--warm-500)">MFA: '+p.mfa+'</span>':''}</div><div class="dchip-progress"><div class="dchip-progress-bar" style="width:${pct}%"></div></div><div style="font-size:10px;color:var(--text2);margin-top:1px">${pct}%</div></div><div class="dchip-time ${tc}">${tcol==='red'?'⚠ ':tcol==='orange'?'! ':''}${fmtDur(p.locationSince)}</div><div class="dchip-actions"><button class="dchip-btn" onclick="event.stopPropagation();markDone('${p.id}')" title="Auschecken">${ico('checkCircle','ico-sm')}</button></div></div>`
+    return`<div class="dchip" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="touchDragStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)"><div class="dchip-grip">${ico('grip','ico-sm')}</div><div style="flex:1;margin-left:6px;cursor:pointer" onclick="openPatientSheet('${p.id}')"><div class="dchip-name">${trkDot}${p.vorname} ${p.nachname}</div><div class="dchip-meta">#${p.pid} · ${p.suite}</div>${(p.arzt&&!p.arzt.startsWith('rec'))||(p.mfa&&!p.mfa.startsWith('rec'))?`<div style="font-size:11px;color:var(--warm-500);margin-top:1px">${(p.arzt&&!p.arzt.startsWith('rec'))?'Arzt: '+p.arzt:''}${(p.arzt&&!p.arzt.startsWith('rec'))&&(p.mfa&&!p.mfa.startsWith('rec'))?' · ':''}${(p.mfa&&!p.mfa.startsWith('rec'))?'MFA: '+p.mfa:''}</div>`:''}<div class="dchip-progress"><div class="dchip-progress-bar" style="width:${pct}%"></div></div><div style="font-size:10px;color:var(--text2);margin-top:1px">${pct}%</div></div><div class="dchip-time ${tc}">${tcol==='red'?'⚠ ':tcol==='orange'?'! ':''}${fmtDur(p.locationSince)}</div><div class="dchip-actions"><button class="dchip-btn" onclick="event.stopPropagation();markDone('${p.id}')" title="Auschecken">${ico('checkCircle','ico-sm')}</button></div></div>`
   }).join('');
   if(hidden>0)h+=`<button onclick="toggleAbschluss('${absKey}')" style="width:100%;padding:8px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;margin-top:4px">+${hidden} weitere anzeigen</button>`;
   if(isAbs&&expandedAbschluss[absKey]&&lp.length>2)h+=`<button onclick="toggleAbschluss('${absKey}')" style="width:100%;padding:6px;border:none;background:transparent;color:var(--text2);font-size:11px;cursor:pointer;margin-top:2px">Weniger anzeigen</button>`;
