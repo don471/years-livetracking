@@ -1658,8 +1658,9 @@ function getUserRole(){
 // ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
-function fmtDur(ms){if(!ms)return'';const ts=typeof ms==='string'?new Date(ms).getTime():ms;if(isNaN(ts))return'';const m=Math.floor((Date.now()-ts)/6e4);if(m<0)return'';if(m<1)return'<1 min';if(m<60)return m+' min';return Math.floor(m/60)+'h '+(m%60)+'min'}
-function fmtDurMM(a,b){const m=Math.round((b-a)/6e4);if(isNaN(m)||m<1)return'<1 min';if(m<60)return m+' min';return Math.floor(m/60)+'h '+(m%60)+'min'}
+function _fmtMin(m){if(m<1)return'<1 min';if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r?h+'h '+r+'min':h+'h'}
+function fmtDur(ms){if(!ms)return'';const ts=typeof ms==='string'?new Date(ms).getTime():ms;if(isNaN(ts))return'';const m=Math.floor((Date.now()-ts)/6e4);if(m<0)return'';return _fmtMin(m)}
+function fmtDurMM(a,b){const m=Math.round((b-a)/6e4);if(isNaN(m)||m<1)return'<1 min';return _fmtMin(m)}
 function fmtClock(ms){const d=new Date(ms);if(isNaN(d.getTime()))return'—';return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
 // Parse startzeit (ISO or HH:MM) into displayable time string
 function fmtStartzeit(sz){if(!sz)return'—';if(sz.includes('T')){const d=new Date(sz);if(!isNaN(d.getTime()))return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}return sz}
@@ -1808,8 +1809,7 @@ if(sollZeit){
   const sollStr=fmtStartzeit(sollZeit);
   const istStr=istZeit?fmtStartzeit(istZeit):'—';
   const diffMin=istZeit?startzeitDiffMin(sollZeit,istZeit):null;
-  const fmtDiff=m=>{const abs=Math.abs(m);if(abs>=60){const h=Math.floor(abs/60);const r=abs%60;return r?`${h}h ${r}min`:`${h}h`}return`${abs} min`};
-  const diffTag=diffMin!==null?(diffMin>5?`<span style="color:var(--red);font-weight:600">+${fmtDiff(diffMin)}</span>`:diffMin<-2?`<span style="color:var(--green);font-weight:600">-${fmtDiff(diffMin)}</span>`:`<span style="color:var(--green)">pünktlich</span>`):'';
+  const diffTag=diffMin!==null?(diffMin>5?`<span style="color:var(--red);font-weight:600">+${_fmtMin(Math.abs(diffMin))}</span>`:diffMin<-2?`<span style="color:var(--green);font-weight:600">-${_fmtMin(Math.abs(diffMin))}</span>`:`<span style="color:var(--green)">pünktlich</span>`):'';
   zeitDisplay=`<div class="field-static" style="display:flex;align-items:center;gap:8px"><span>Soll: ${sollStr}</span><span style="color:var(--text2)">·</span><span>Ist: ${istStr}</span>${diffTag?`<span style="color:var(--text2)">·</span>${diffTag}`:''}</div>`;
 }
 const atStatus=p.airtableStatus||'';
@@ -2311,8 +2311,8 @@ document.getElementById('adminTabs').innerHTML=tabs.map(t=>`<button class="admin
 let h='';
 // === TAB: DASHBOARD ===
 if(adminActiveTab==='stats'){
-const fm=ms=>{if(!ms||ms<6e4)return'< 1 min';const m=Math.round(ms/6e4);if(m<60)return m+' min';return Math.floor(m/60)+'h '+m%60+'min'};
-const fmDelta=mins=>{if(isNaN(mins)||mins==null)return'±0';const abs=Math.abs(Math.round(mins));if(abs<1)return'±0';const sign=mins>0?'+':'−';if(abs<60)return sign+abs+' min';return sign+Math.floor(abs/60)+'h '+abs%60+'min'};
+const fm=ms=>{if(!ms||ms<6e4)return'< 1 min';const m=Math.round(ms/6e4);return _fmtMin(m)};
+const fmDelta=mins=>{if(isNaN(mins)||mins==null)return'±0';const abs=Math.abs(Math.round(mins));if(abs<1)return'±0';const sign=mins>0?'+':'−';if(abs<60)return sign+abs+' min';const h=Math.floor(abs/60),r=abs%60;return sign+h+'h'+(r?' '+r+'min':'')};
 const isToday=dateKey(statDate)===todayKey();
 const rangeLabels={day:'Tag',week:'Woche',month:'Monat'};
 const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
