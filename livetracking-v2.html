@@ -850,7 +850,9 @@ async function initSupabase(){
         supaUser=cbSession.user;backendMode='supabase';
         window.history.replaceState(null,'',window.location.pathname+window.location.search);
         // Check if this is a Google OAuth login
-        const isOAuth=cbSession.user.app_metadata?.provider==='google';
+        // provider_token exists only for OAuth; also check providers array; exclude email-specific callbacks
+        const isEmailCallback=hash.includes('type=recovery')||hash.includes('type=signup')||hash.includes('type=email');
+        const isOAuth=!isEmailCallback&&(cbSession.user.app_metadata?.provider==='google'||(cbSession.user.app_metadata?.providers||[]).includes('google')||!!cbSession.provider_token);
         if(isOAuth){
           const allowed=await handleOAuthUser(cbSession.user);
           if(!allowed)return false;
