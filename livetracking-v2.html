@@ -3010,7 +3010,7 @@ function applyTheme(t){document.documentElement.setAttribute('data-theme',t);loc
 function toggleTheme(){applyTheme(getTheme()==='dark'?'light':'dark')}
 function updateThemeIcon(){const el=document.getElementById('hdrIcoTheme');if(el)el.innerHTML=getTheme()==='dark'?ICO.sun:ICO.moon}
 // Apply saved theme immediately
-(function(){const t=getTheme();if(t!=='dark')document.documentElement.setAttribute('data-theme',t)})()
+;(function(){const t=getTheme();if(t!=='dark')document.documentElement.setAttribute('data-theme',t)})();
 
 // ═══════════════════════════════════════
 // INIT
