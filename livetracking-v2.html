@@ -1712,7 +1712,7 @@ function startzeitDiffMin(soll,ist){
   const toMin=(s)=>{if(!s)return NaN;if(s.includes('T')){const d=new Date(s);return isNaN(d.getTime())?NaN:d.getHours()*60+d.getMinutes()}const p=s.split(':');return+p[0]*60+(+p[1]||0)};
   const a=toMin(soll),b=toMin(ist);return(isNaN(a)||isNaN(b))?null:Math.round(b-a);
 }
-function ini(v,n){return(v[0]+n[0]).toUpperCase()}
+function ini(v,n){return((v||'?')[0]+(n||'?')[0]).toUpperCase()}
 function locName(id){const l=ALL_LOCS.find(x=>x.id===id);return l?l.name:'–'}
 function locType(id){const l=ALL_LOCS.find(x=>x.id===id);return l?l.type:null}
 function locColor(id){const l=ALL_LOCS.find(x=>x.id===id);return l?l.color:'gray'}
