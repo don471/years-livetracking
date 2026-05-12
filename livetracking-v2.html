@@ -2234,12 +2234,13 @@ if(chipPatients.length){
     const trk=tracks.find(t=>t.id===p.track);
     const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
     let cls='pat-mini';
-    if(s==='not-arrived')cls+=' pm-unassigned';
+    const _hasRoom=p.currentLocation&&ALL_LOCS.find(x=>x.id===p.currentLocation);
+    if(s==='not-arrived'||!_hasRoom)cls+=' pm-unassigned';
     else if(s==='waiting')cls+=' pm-waiting';
     else cls+=' pm-active';
     const zeit=fmtStartzeit(p.startzeit);
-    const loc=p.currentLocation?locName(p.currentLocation):'';
-    const sub=s==='not-arrived'?zeit:(loc||zeit);
+    const loc=_hasRoom?_hasRoom.name:'';
+    const sub=(!_hasRoom)?zeit:(loc||zeit);
     h+=`<div class="${cls}" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${patShort(p)}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
   });
   h+=`</div>`;
