@@ -1006,13 +1006,24 @@ async function handleOAuthUser(user){
   }
   // Profil automatisch erstellen/aktualisieren
   const fullName=user.user_metadata?.full_name||user.user_metadata?.name||user.email.split('@')[0];
-  await supaClient.from('profiles').upsert({
-    id:user.id,
-    email:user.email,
-    full_name:fullName,
-    role:'mfa',  // Default-Rolle, Admin kann in Einstellungen ändern
-    status:'active'
-  },{onConflict:'id'});
+  const eLow=user.email.toLowerCase();
+  // Check if profile already exists for this email (e.g. from earlier invite with different auth ID)
+  const{data:existingByEmail}=await supaClient.from('profiles').select('id,role,status').eq('email',eLow).maybeSingle();
+  if(existingByEmail&&existingByEmail.id!==user.id){
+    // Migrate: update the old profile to the new OAuth user ID, preserve role
+    await supaClient.from('profiles').delete().eq('id',existingByEmail.id);
+    await supaClient.from('profiles').upsert({
+      id:user.id,email:eLow,full_name:fullName,
+      role:existingByEmail.role||'mfa',status:'active'
+    },{onConflict:'id'});
+  }else{
+    // Normal upsert — new user or same ID
+    const role=existingByEmail?existingByEmail.role:'mfa';
+    await supaClient.from('profiles').upsert({
+      id:user.id,email:eLow,full_name:fullName,
+      role:role,status:'active'
+    },{onConflict:'id'});
+  }
   return true;
 }
 
