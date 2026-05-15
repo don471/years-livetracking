@@ -846,8 +846,8 @@ function loadData(){try{const s=localStorage.getItem('years_tracking');if(s){con
   const isNewDay=savedDay&&savedDay!==todayStr;
   patients=isNewDay?[]:(d.patients||[]);
   if(isNewDay)console.log(`Day change detected (${savedDay} → ${todayStr}): cleared ${(d.patients||[]).length} patients from yesterday`);
-  nfcTags=d.nfcTags||{};teamMembers=d.teamMembers||DEFAULT_TEAM;suites=d.suites||DEFAULT_SUITES;timeSlots=d.timeSlots||DEFAULT_TIMESLOTS;treatments=d.treatments||JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=d.txStatuses||JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=d.tracks||JSON.parse(JSON.stringify(DEFAULT_TRACKS));if(d.modules){Object.keys(d.modules).forEach(k=>{if(modules[k])Object.assign(modules[k],d.modules[k])})}if(d.suiteRooms){SUITE_ROOMS.length=0;d.suiteRooms.forEach(r=>SUITE_ROOMS.push(r))}if(d.stations){STATIONS.length=0;d.stations.forEach(r=>STATIONS.push(r))}if(d.pauses){PAUSES.length=0;d.pauses.forEach(r=>PAUSES.push(r))}if(!PAUSES.length){DEFAULT_PAUSES.forEach(p=>PAUSES.push({...p}))}rebuildAllLocs();patients.forEach(initPatTreatments);patients.forEach((p,i)=>{if(!p.track&&tracks.length)p.track=tracks[i%tracks.length].id});return}}catch(e){}patients=[];nfcTags={};teamMembers=JSON.parse(JSON.stringify(DEFAULT_TEAM));suites=[...DEFAULT_SUITES];timeSlots=JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));treatments=JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=JSON.parse(JSON.stringify(DEFAULT_TRACKS))}
-function saveData(){try{localStorage.setItem('years_tracking',JSON.stringify({patients,nfcTags,teamMembers,suites,timeSlots,treatments,txStatuses,tracks,modules,suiteRooms:SUITE_ROOMS,stations:STATIONS,pauses:PAUSES,savedAt:Date.now()}));archiveDay()}catch(e){}if(backendMode==='supabase')saveAllToSupabase().catch(e=>console.error('Supabase save failed:',e))}
+  nfcTags=d.nfcTags||{};teamMembers=d.teamMembers||DEFAULT_TEAM;suites=d.suites||DEFAULT_SUITES;timeSlots=d.timeSlots||DEFAULT_TIMESLOTS;treatments=d.treatments||JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=d.txStatuses||JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=d.tracks||JSON.parse(JSON.stringify(DEFAULT_TRACKS));if(d.modules){Object.keys(d.modules).forEach(k=>{if(modules[k])Object.assign(modules[k],d.modules[k])})}if(d.orderWarningEnabled!==undefined)orderWarningEnabled=d.orderWarningEnabled;if(d.suiteRooms){SUITE_ROOMS.length=0;d.suiteRooms.forEach(r=>SUITE_ROOMS.push(r))}if(d.stations){STATIONS.length=0;d.stations.forEach(r=>STATIONS.push(r))}if(d.pauses){PAUSES.length=0;d.pauses.forEach(r=>PAUSES.push(r))}if(!PAUSES.length){DEFAULT_PAUSES.forEach(p=>PAUSES.push({...p}))}rebuildAllLocs();patients.forEach(initPatTreatments);patients.forEach((p,i)=>{if(!p.track&&tracks.length)p.track=tracks[i%tracks.length].id});return}}catch(e){}patients=[];nfcTags={};teamMembers=JSON.parse(JSON.stringify(DEFAULT_TEAM));suites=[...DEFAULT_SUITES];timeSlots=JSON.parse(JSON.stringify(DEFAULT_TIMESLOTS));treatments=JSON.parse(JSON.stringify(DEFAULT_TREATMENTS));txStatuses=JSON.parse(JSON.stringify(DEFAULT_TX_STATUSES));tracks=JSON.parse(JSON.stringify(DEFAULT_TRACKS))}
+function saveData(){try{localStorage.setItem('years_tracking',JSON.stringify({patients,nfcTags,teamMembers,suites,timeSlots,treatments,txStatuses,tracks,modules,orderWarningEnabled,suiteRooms:SUITE_ROOMS,stations:STATIONS,pauses:PAUSES,savedAt:Date.now()}));archiveDay()}catch(e){}if(backendMode==='supabase')saveAllToSupabase().catch(e=>console.error('Supabase save failed:',e))}
 
 // Migrate: ensure Airtable-matching txStatuses exist
 function migrateTxStatuses(){
@@ -874,6 +874,7 @@ let modules={
   chat:{enabled:false,label:'Chat',icon:'messageSquare',desc:'Stations- und Patienten-Chat',patientChat:true,channels:[]},
   labor:{enabled:false,label:'Labor',icon:'flask',desc:'Labor-Aufträge und Ergebnisse verfolgen',labTypes:[{id:'blut',name:'Blutbild',expectedMin:45,color:'red'},{id:'crp',name:'CRP',expectedMin:30,color:'orange'},{id:'urin',name:'Urinanalyse',expectedMin:20,color:'yellow'},{id:'schild',name:'Schilddrüse',expectedMin:60,color:'purple'}]}
 };
+let orderWarningEnabled=true;
 let currentView='dashboard',activeFilter='all',activeTrackFilter='all',detectedRoomId=null,lastAction=null;
 let sheetActiveTab='raum',pendingEdits={};
 // Realtime echo suppression: track patient IDs we just saved so we ignore our own Realtime events
@@ -1370,7 +1371,8 @@ async function saveSettingsToSupabase(){
       {key:'suites',value:suites||[],updated_at:new Date().toISOString()},
       {key:'timeSlots',value:timeSlots||[],updated_at:new Date().toISOString()},
       {key:'txStatuses',value:txStatuses||[],updated_at:new Date().toISOString()},
-      {key:'modules',value:modules||{},updated_at:new Date().toISOString()}
+      {key:'modules',value:modules||{},updated_at:new Date().toISOString()},
+      {key:'orderWarningEnabled',value:orderWarningEnabled,updated_at:new Date().toISOString()}
     ];
     const{error}=await supaClient.from('app_settings').upsert(settings,{onConflict:'key'});
     if(error){console.warn('Settings sync skipped (table may not exist):',error.message)}
@@ -1391,6 +1393,7 @@ async function loadSettingsFromSupabase(){
       if(row.key==='modules'&&row.value){
         Object.keys(row.value).forEach(k=>{if(modules[k])Object.assign(modules[k],row.value[k])});
       }
+      if(row.key==='orderWarningEnabled'&&row.value!==undefined)orderWarningEnabled=row.value;
     });
   }catch(e){console.warn('loadSettingsFromSupabase error:',e)}
 }
@@ -1498,6 +1501,7 @@ function handleRealtimeSettingsChange(payload){
     // Merge incoming module config with defaults (preserve structure)
     Object.keys(row.value).forEach(k=>{if(modules[k])Object.assign(modules[k],row.value[k])});
   }
+  if(row.key==='orderWarningEnabled'&&row.value!==undefined)orderWarningEnabled=row.value;
   renderAll()
 }
 
@@ -2084,7 +2088,7 @@ async function transitionPatient(pid,locId,opts){opts=opts||{};const p=patients.
 const cap=checkRoomCapacity(locId);if(cap.full){if(cap.hard){toast(`⛔ ${cap.name} ist belegt (max. ${cap.max}) — Zuweisung nicht möglich`);return false}const r=await showModal('Raum voll',`<p><strong>${cap.name}</strong> hat bereits ${cap.current} von ${cap.max} Patienten.</p><p>Trotzdem zuweisen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Trotzdem zuweisen',cls:'modal-btn-confirm',val:'yes'}]);if(r!=='yes')return false}
 // 1b) Reihenfolge-Prüfung
 let orderViolation=null;
-if(!opts.skipOrderCheck){
+if(!opts.skipOrderCheck&&orderWarningEnabled){
   const oCheck=checkStationOrder(p,locId);
   if(!oCheck.ok){
     const expName=oCheck.expected?oCheck.expected.name:'?';
@@ -2585,6 +2589,7 @@ Object.keys(modules).forEach(modId=>{
 // === TAB: TRACKS ===
 if(adminActiveTab==='tracks'){
 h+=`<p class="admin-hint">Tracks sind parallele Prozess-Ketten. Jeder Patient wird einem Track zugewiesen und durchläuft die Räume in der konfigurierten Reihenfolge. Räume per Drag & Drop innerhalb eines Tracks sortieren.</p>`;
+h+=`<div class="admin-card" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:10px"><span class="admin-card-icon">${ico('alertTriangle','ico-sm')}</span><div><div class="admin-card-name">Reihenfolge-Warnung</div><div style="font-size:12px;color:var(--text2)">Popup bei Abweichung von der Track-Reihenfolge</div></div></div><button class="mod-toggle ${orderWarningEnabled?'on':''}" onclick="orderWarningEnabled=!orderWarningEnabled;saveData();syncSettings('settings');renderAdmin()"></button></div>`;
 tracks.forEach((t,ti)=>{
   h+=`<div style="margin-bottom:16px;padding:14px;background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);border-left:4px solid ${t.color}">`;
   h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">`;
