@@ -1093,7 +1093,7 @@ async function loadDataFromSupabase(){
     if(rooms&&rooms.length){
       SUITE_ROOMS.length=0;STATIONS.length=0;PAUSES.length=0;
       rooms.forEach(r=>{
-        const obj={id:r.id,name:r.name,color:r.color,type:r.type,greenTime:r.green_time||15,orangeTime:r.orange_time||15,maxPatients:r.max_patients||0,showTime:r.show_time!==false};
+        const obj={id:r.id,name:r.name,color:r.color,type:r.type,greenTime:r.green_time??15,orangeTime:r.orange_time??15,maxPatients:r.max_patients||0,showTime:r.show_time!==false};
         if(r.type==='suite')SUITE_ROOMS.push(obj);
         else if(r.type==='room')STATIONS.push(obj);
         else if(r.type==='pause')PAUSES.push(obj);
@@ -1440,7 +1440,7 @@ function handleRealtimeRoomChange(payload){
     const removeFrom=arr=>{const i=arr.findIndex(x=>x.id===oldId);if(i>=0)arr.splice(i,1)};
     removeFrom(SUITE_ROOMS);removeFrom(STATIONS);removeFrom(PAUSES);removeFrom(ALL_LOCS);
   }else if(row){
-    const obj={id:row.id,name:row.name,color:row.color,type:row.type,greenTime:row.green_time||15,orangeTime:row.orange_time||15,maxPatients:row.max_patients||0};
+    const obj={id:row.id,name:row.name,color:row.color,type:row.type,greenTime:row.green_time??15,orangeTime:row.orange_time??15,maxPatients:row.max_patients||0};
     // Remove from old arrays first
     const removeFrom=arr=>{const i=arr.findIndex(x=>x.id===row.id);if(i>=0)arr.splice(i,1)};
     removeFrom(SUITE_ROOMS);removeFrom(STATIONS);removeFrom(PAUSES);
@@ -1600,7 +1600,7 @@ function startConfigPolling(){
         if(newRoomIds!==curRoomIds||newRoomHash!==curRoomHash){
           SUITE_ROOMS.length=0;STATIONS.length=0;PAUSES.length=0;
           rooms.forEach(r=>{
-            const obj={id:r.id,name:r.name,color:r.color,type:r.type,greenTime:r.green_time||15,orangeTime:r.orange_time||15,maxPatients:r.max_patients||0,showTime:r.show_time!==false};
+            const obj={id:r.id,name:r.name,color:r.color,type:r.type,greenTime:r.green_time??15,orangeTime:r.orange_time??15,maxPatients:r.max_patients||0,showTime:r.show_time!==false};
             if(r.type==='suite')SUITE_ROOMS.push(obj);
             else if(r.type==='room')STATIONS.push(obj);
             else if(r.type==='pause')PAUSES.push(obj);
