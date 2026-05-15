@@ -1537,6 +1537,9 @@ async function addQuickEntry(catId){if(!isAdmin()){toast('Nur Admins');return}
 async function removeQuickEntry(catId,idx){if(!isAdmin()){toast('Nur Admins');return}
   const cat=modules.doku.categories.find(c=>c.id===catId);
   if(!cat)return;
+  const entry=cat.quickEntries[idx]||'Eintrag';
+  const r=await showModal('Schnelleintrag löschen?',`<p><strong>${entry}</strong> wirklich entfernen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Löschen',cls:'modal-btn-danger',val:'yes'}]);
+  if(r!=='yes')return;
   cat.quickEntries.splice(idx,1);
   saveData();await syncSettings('settings');renderAdmin();
 }
@@ -1557,6 +1560,8 @@ function addDokuEntry(pid,catId,text){
 async function removeLabType(ltId){if(!isAdmin()){toast('Nur Admins');return}
   const lt=modules.labor.labTypes.find(l=>l.id===ltId);
   if(!lt)return;
+  const r=await showModal('Labor-Typ löschen?',`<p><strong>${lt.name}</strong> wirklich entfernen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Löschen',cls:'modal-btn-danger',val:'yes'}]);
+  if(r!=='yes')return;
   modules.labor.labTypes=modules.labor.labTypes.filter(l=>l.id!==ltId);
   saveData();await syncSettings('settings');renderAdmin();toast(lt.name+' entfernt');
 }
@@ -2940,7 +2945,7 @@ async function renameTrack(tid){const t=tracks.find(x=>x.id===tid);if(!t)return;
 async function changeTrackColor(tid){const t=tracks.find(x=>x.id===tid);if(!t)return;const colors=['#85FFC3','#B39DDB','#FFD54F','#4FC3F7','#FF8A65','#81C784','#F48FB1','#CE93D8','#80DEEA','#FFAB91'];const btns=colors.map(c=>`<button style="width:36px;height:36px;border-radius:50%;border:3px solid ${c===t.color?'var(--warm-900)':'transparent'};background:${c};cursor:pointer;transition:all .15s" onclick="resolveModal('${c}')"></button>`).join('');const r=await showModal('Track-Farbe',`<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0">${btns}</div>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'}]);if(!r||r==='no')return;t.color=r;saveData();await syncSettings('tracks');renderAll();renderAdmin();toast('Farbe geändert')}
 async function removeTrack(tid){const t=tracks.find(x=>x.id===tid);if(!t)return;const r=await showModal('Track entfernen?',`<p><strong>${t.name}</strong> wirklich entfernen?</p><p style="font-size:12px;color:var(--text2)">Patienten in diesem Track verlieren ihre Track-Zuordnung.</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes')return;patients.forEach(p=>{if(p.track===tid)p.track=null});tracks=tracks.filter(x=>x.id!==tid);saveData();await syncSettings('tracks');renderAll();renderAdmin();toast(`${t.name} entfernt`)}
 async function moveTrackRoom(tid,idx,dir){const t=tracks.find(x=>x.id===tid);if(!t)return;const ni=idx+dir;if(ni<0||ni>=t.rooms.length)return;const tmp=t.rooms[idx];t.rooms[idx]=t.rooms[ni];t.rooms[ni]=tmp;saveData();await syncSettings('tracks');renderAll();renderAdmin();toast('Reihenfolge geändert')}
-async function removeTrackRoom(tid,rid){const t=tracks.find(x=>x.id===tid);if(!t)return;t.rooms=t.rooms.filter(r=>r!==rid);saveData();await syncSettings('tracks');renderAll();renderAdmin();toast('Raum entfernt')}
+async function removeTrackRoom(tid,rid){const t=tracks.find(x=>x.id===tid);if(!t)return;const rName=locName(rid);const r=await showModal('Raum aus Track entfernen?',`<p><strong>${rName}</strong> aus Track <strong>${t.name}</strong> entfernen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Entfernen',cls:'modal-btn-danger',val:'yes'}]);if(r!=='yes'){renderAdmin();return}t.rooms=t.rooms.filter(r=>r!==rid);saveData();await syncSettings('tracks');renderAll();renderAdmin();toast(`${rName} aus ${t.name} entfernt`)}
 async function addRoomToTrack(tid){const t=tracks.find(x=>x.id===tid);if(!t)return;const sel=document.getElementById('addRoom_'+tid);const rid=sel.value;if(!rid)return;if(t.rooms.includes(rid)){toast('Raum bereits im Track');return}t.rooms.push(rid);saveData();await syncSettings('tracks');renderAll();renderAdmin();toast(`${locName(rid)} hinzugefügt`)}
 
 async function addTxStatus(){if(!isAdmin()){toast('Nur Admins');return}const label=document.getElementById('newTxStatusLabel').value.trim();if(!label){toast('Bitte Name eingeben');return}const id=label.toLowerCase().replace(/[^a-zäöüß0-9]/g,'-').replace(/-+/g,'-');if(txStatuses.find(s=>s.id===id)){toast('Status existiert bereits');return}txStatuses.push({id,label,countAsDone:false});saveData();await syncSettings('settings');renderAll();renderAdmin();toast(`"${label}" hinzugefügt`)}
