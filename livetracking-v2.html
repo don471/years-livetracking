@@ -85,7 +85,6 @@ body.panel-open{overflow:hidden}
 .bell-item:last-child{border-bottom:none}
 .bell-item-name{font-weight:700;font-size:14px;flex:1;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .bell-item-count{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:var(--orange);color:#fff;white-space:nowrap;flex-shrink:0}
-.nd-warn-banner{display:flex;align-items:center;gap:8px;padding:10px 14px;margin:0 0 10px;background:var(--orange-bg);border:1px solid var(--orange);border-radius:10px;font-size:13px;color:var(--orange);font-weight:600;cursor:pointer}
 .hdr-btn:active{transform:scale(.92)}
 .hdr-btn.active{background:var(--mint);color:var(--warm-900);border-color:var(--mint)}
 .hdr-btn .ico svg{stroke:var(--text)}.hdr-btn.active .ico svg{stroke:var(--warm-900)}
@@ -264,6 +263,9 @@ body.panel-open{overflow:hidden}
 .pat-mini .pm-time{font-size:10px;color:var(--text2);font-weight:400}
 .pat-mini.pm-unassigned{background:var(--orange-bg);border-color:var(--orange);border-style:dashed}
 .pat-mini.pm-done{background:var(--mint-bg);border-color:var(--green);color:var(--green)}
+.pat-mini.pm-pending{background:var(--orange-bg);border:2px solid var(--orange);color:var(--orange);animation:pendPulse 2s infinite}
+.pm-pend-badge{font-size:10px;font-weight:700;background:var(--orange);color:#fff;border-radius:8px;padding:1px 6px;margin-left:2px}
+@keyframes pendPulse{0%,100%{opacity:1}50%{opacity:.7}}
 .pat-mini.pm-waiting{background:var(--yellow-bg);border-color:var(--yellow)}
 .pat-mini.pm-active{background:var(--warm-100);border-color:var(--warm-300)}
 .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:stretch}
@@ -2232,10 +2234,6 @@ tracks.forEach(t=>{
 });
 h+=`</div>`;
 
-// ── Warning banner: patients with pending treatments ──
-const pendingPats=patsWithPendingTx();
-if(pendingPats.length){h+=`<div class="nd-warn-banner" onclick="toggleBellPanel()"><span style="font-size:16px">⚠</span><span>${pendingPats.length} Patient${pendingPats.length>1?'en':''} mit offenen Untersuchungen</span></div>`}
-
 // ── Unassigned chip bar: patients without track (always visible) ──
 const unassignedPats=patients.filter(p=>!p.track&&pStatus(p)!=='done');
 if(unassignedPats.length){
@@ -2295,7 +2293,9 @@ if(donePats.length){
     const trk=tracks.find(t=>t.id===p.track);
     const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
     const doneTime=p.doneAt?new Date(p.doneAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):'';
-    h+=`<div class="pat-mini pm-done" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${patShort(p)}</span>${doneTime?`<span class="pm-time">${doneTime}</span>`:''}</div>`;
+    const pendN=Object.values(p.treatments||{}).filter(s=>s==='ausstehend').length+pendingNdComments(p);
+    const pendCls=pendN>0?'pm-pending':'pm-done';
+    h+=`<div class="pat-mini ${pendCls}" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${patShort(p)}</span>${pendN>0?`<span class="pm-pend-badge">${pendN}</span>`:(doneTime?`<span class="pm-time">${doneTime}</span>`:'')}</div>`;
   });
   h+=`</div>`;
 }
