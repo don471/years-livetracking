@@ -256,6 +256,7 @@ body.panel-open{overflow:hidden}
 .pat-chip-bar{display:flex;gap:6px;padding:8px 0 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;align-items:center;min-height:0;transition:all .2s}
 .pat-chip-bar:empty{display:none;padding:0;min-height:0}
 .pat-chip-bar-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--text2);white-space:nowrap;flex-shrink:0;margin-right:2px}
+.pat-chip-divider{display:block;width:2px;height:24px;background:var(--border);border-radius:1px;flex-shrink:0;margin:0 6px}
 .pat-mini{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:16px;font-size:12px;font-weight:500;background:var(--warm-200);color:var(--text);border:1.5px solid var(--border);cursor:grab;white-space:nowrap;transition:all .15s;flex-shrink:0;user-select:none;-webkit-user-select:none}
 .pat-mini:active{cursor:grabbing;transform:scale(.95)}
 .pat-mini.dragging{opacity:.4}
@@ -892,7 +893,7 @@ let currentView='dashboard',activeFilter='all',activeTrackFilter='all',detectedR
 let sheetActiveTab='raum',pendingEdits={};
 // Realtime echo suppression: track patient IDs we just saved so we ignore our own Realtime events
 const _recentlySavedPatients=new Map(); // patientId -> timestamp
-const REALTIME_ECHO_WINDOW=3000; // 3 seconds to ignore echoes
+const REALTIME_ECHO_WINDOW=5000; // 5 seconds to ignore echoes
 const SUITE_ROOMS=DEFAULT_SUITES_ROOMS,STATIONS=DEFAULT_STATIONS,PAUSES=DEFAULT_PAUSES,ALL_LOCS=[...SUITE_ROOMS,...STATIONS,...PAUSES];
 
 // ═══════════════════════════════════════
@@ -1702,10 +1703,16 @@ function handleRealtimePatientChange(payload){
     const local=patients[idx];
     const localSince=local.locationSince||0;
     const remoteSince=incomingLocationSince||0;
-    // If local state has a newer location change, only update Stammdaten (name, program, etc.)
-    // but keep local location/status/journey intact
-    if(localSince>remoteSince&&local.currentLocation){
-      console.log('Realtime: keeping newer local state for',row.id,'(local:',localSince,'remote:',remoteSince,')');
+    const localJLen=(local.journey||[]).length;
+    const remoteJLen=(row.journey||[]).length;
+    // Guard 1: local has newer location change
+    // Guard 2: local patient is done but incoming data is older (no doneAt or fewer journey entries)
+    // Guard 3: local journey has more entries than incoming (stale Realtime event)
+    const keepLocal=(localSince>remoteSince&&local.currentLocation)
+      ||(local.doneAt&&!row.done_at)
+      ||(localJLen>remoteJLen);
+    if(keepLocal){
+      console.log('Realtime: keeping newer local state for',row.id,'(localJ:',localJLen,'remoteJ:',remoteJLen,'localDone:',!!local.doneAt,'remoteDone:',!!row.done_at,')');
       // Only update non-location fields (Airtable Stammdaten)
       local.vorname=row.vorname||local.vorname;
       local.nachname=row.nachname||local.nachname;
@@ -2252,54 +2259,54 @@ if(unassignedPats.length){
   h+=`</div>`;
 }
 
-// ── Patient chip bar: only on "Alle" view (track views show patients in room cards) ──
-if(activeTrackFilter==='all'){
-const chipPatients=patients.filter(p=>{
-  const s=pStatus(p);
-  if(s==='done')return false;
-  if(!p.track)return false;
-  return true;
-});
+// ── Combined chip bar: Check-in patients + Done patients on same row ──
+{
+const chipPatients=activeTrackFilter==='all'?patients.filter(p=>{
+  const s=pStatus(p);return s!=='done'&&!!p.track;
+}):[];
 const chipOrder={'not-arrived':0,'waiting':1,'pause':2,'in-room':3};
 chipPatients.sort((a,b)=>(chipOrder[pStatus(a)]??9)-(chipOrder[pStatus(b)]??9));
-if(chipPatients.length){
-  h+=`<div class="pat-chip-bar" data-drop-zone="checkin" ondragover="event.preventDefault();this.style.background='var(--green-bg)'" ondragleave="this.style.background=''" ondrop="chipBarDrop(event);this.style.background=''"><span class="pat-chip-bar-label">Patienten Check-in</span>`;
-  chipPatients.forEach(p=>{
-    const s=pStatus(p);
-    const trk=tracks.find(t=>t.id===p.track);
-    const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
-    let cls='pat-mini';
-    const _hasRoom=p.currentLocation&&ALL_LOCS.find(x=>x.id===p.currentLocation);
-    if(s==='not-arrived'||!_hasRoom)cls+=' pm-unassigned';
-    else if(s==='waiting')cls+=' pm-waiting';
-    else cls+=' pm-active';
-    const zeit=fmtStartzeit(p.startzeit);
-    const loc=_hasRoom?_hasRoom.name:'';
-    const sub=(!_hasRoom)?zeit:(loc||zeit);
-    h+=`<div class="${cls}" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${patShort(p)}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
-  });
-  h+=`</div>`;
-}
-}
-
-// ── Done chip bar: finished patients (track-filtered + unassigned) ──
 const donePats=patients.filter(p=>{
   if(pStatus(p)!=='done')return false;
   if(activeTrackFilter==='all')return true;
   return p.track===activeTrackFilter||!p.track;
 });
-if(donePats.length){
-  donePats.sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
-  h+=`<div class="pat-chip-bar"><span class="pat-chip-bar-label">✓ Fertig</span>`;
-  donePats.forEach(p=>{
-    const trk=tracks.find(t=>t.id===p.track);
-    const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
-    const doneTime=p.doneAt?new Date(p.doneAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):'';
-    const pendN=p.doneAt?(Object.values(p.treatments||{}).filter(s=>s==='ausstehend').length+pendingNdComments(p)):0;
-    const pendCls=pendN>0?'pm-pending':'pm-done';
-    h+=`<div class="pat-mini ${pendCls}" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${patShort(p)}</span>${pendN>0?`<span class="pm-pend-badge">${pendN}</span>`:(doneTime?`<span class="pm-time">${doneTime}</span>`:'')}</div>`;
-  });
+donePats.sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+if(chipPatients.length||donePats.length){
+  h+=`<div class="pat-chip-bar" data-drop-zone="checkin" ondragover="event.preventDefault();this.style.background='var(--green-bg)'" ondragleave="this.style.background=''" ondrop="chipBarDrop(event);this.style.background=''">`;
+  if(chipPatients.length){
+    h+=`<span class="pat-chip-bar-label">Patienten Check-in</span>`;
+    chipPatients.forEach(p=>{
+      const s=pStatus(p);
+      const trk=tracks.find(t=>t.id===p.track);
+      const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
+      let cls='pat-mini';
+      const _hasRoom=p.currentLocation&&ALL_LOCS.find(x=>x.id===p.currentLocation);
+      if(s==='not-arrived'||!_hasRoom)cls+=' pm-unassigned';
+      else if(s==='waiting')cls+=' pm-waiting';
+      else cls+=' pm-active';
+      const zeit=fmtStartzeit(p.startzeit);
+      const loc=_hasRoom?_hasRoom.name:'';
+      const sub=(!_hasRoom)?zeit:(loc||zeit);
+      h+=`<div class="${cls}" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${patShort(p)}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
+    });
+  }
+  if(chipPatients.length&&donePats.length){
+    h+=`<span class="pat-chip-divider"></span>`;
+  }
+  if(donePats.length){
+    h+=`<span class="pat-chip-bar-label" style="color:var(--green)">✓ Fertig</span>`;
+    donePats.forEach(p=>{
+      const trk=tracks.find(t=>t.id===p.track);
+      const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
+      const doneTime=p.doneAt?new Date(p.doneAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):'';
+      const pendN=p.doneAt?(Object.values(p.treatments||{}).filter(s=>s==='ausstehend').length+pendingNdComments(p)):0;
+      const pendCls=pendN>0?'pm-pending':'pm-done';
+      h+=`<div class="pat-mini ${pendCls}" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${patShort(p)}</span>${pendN>0?`<span class="pm-pend-badge">${pendN}</span>`:(doneTime?`<span class="pm-time">${doneTime}</span>`:'')}</div>`;
+    });
+  }
   h+=`</div>`;
+}
 }
 
 if(activeTrackFilter==='all'){
@@ -3113,6 +3120,9 @@ function updateThemeIcon(){const el=document.getElementById('hdrIcoTheme');if(el
       }else if(sp&&lp.currentLocation&&sp.currentLocation&&lp.currentLocation!==sp.currentLocation&&localSavedAt>Date.now()-60000){
         sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince;sp.status=lp.status;sp.journey=lp.journey;sp.lastMovedBy=lp.lastMovedBy||'';
       }
+      // Preserve local journey/done state if richer than Supabase
+      if(sp&&(lp.journey||[]).length>(sp.journey||[]).length){sp.journey=lp.journey}
+      if(sp&&lp.doneAt&&!sp.doneAt){sp.doneAt=lp.doneAt;sp.status=lp.status;sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince}
     });
     setupRealtimeSync();
     startConfigPolling();
