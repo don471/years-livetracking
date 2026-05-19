@@ -1213,14 +1213,13 @@ function mergeAirtablePatients(atPatients){
       existing.airtableLastRoom=at.airtable_last_room||'';
       existing.airtableStatus=at.airtable_status||'';
       if(at.actual_start)existing.actualStart=at.actual_start;
-      // Default to Track 1 if patient has no track assigned
-      if(!existing.track&&tracks.length)existing.track=tracks[0].id;
+      // Track is assigned during check-in, not auto-assigned from Airtable
       // Airtable room is reference only — never auto-assign patients to rooms
       updateCount++;
     }else{
       // NEW: Create patient from Airtable data
-      // Default to Track 1 (first track) until Airtable has track info
-      const defaultTrack=tracks.length?tracks[0].id:null;
+      // Track is assigned during check-in, not auto-assigned
+      const defaultTrack=null;
       const newPat={
         id:'at-'+at.airtable_record_id,
         airtableRecordId:at.airtable_record_id,
@@ -2374,7 +2373,7 @@ async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.
     const action=s==='not-arrived'?'einchecken und':'';
     const r2=await showModal('Patient zuweisen?',`<p><strong>${patName(p)}</strong> ${action} in <strong>${locName(locId)}</strong> zuweisen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Zuweisen',cls:'modal-btn-confirm',val:'yes'}]);
     if(r2!=='yes')return;
-    if(s==='not-arrived'){if(!p.journey)p.journey=[];if(!p.track&&tracks.length){p.track=tracks[0].id;p.journey.push({type:'track-change',from:null,to:p.track,at:Date.now()})}p.status='waiting';p.currentLocation=null;p.locationSince=null;p.checkedInAt=Date.now();p.journey.push({type:'checkin',at:Date.now(),movedBy:getCurrentUserName()||undefined});saveData()}
+    if(s==='not-arrived'){if(!p.journey)p.journey=[];p.status='waiting';p.currentLocation=null;p.locationSince=null;p.checkedInAt=Date.now();p.journey.push({type:'checkin',at:Date.now(),movedBy:getCurrentUserName()||undefined});saveData()}
   }
   await transitionPatient(pid,locId)}
 let touchDragTimer=null,touchStartX=0,touchStartY=0,touchDragActive=false,touchSrcEl=null,autoScrollRAF=null;
