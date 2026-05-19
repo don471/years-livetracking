@@ -746,27 +746,16 @@ body.panel-open{overflow:hidden}
     <div style="font-size:14px;color:var(--text2);font-weight:500;letter-spacing:1px">Clinic Livetracking</div>
   </div>
   <div class="modal" style="max-width:400px;box-shadow:var(--shadow-lg);border-radius:16px">
-    <div style="padding:28px 24px 8px">
-      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px">Anmelden</div>
-      <input class="admin-input" id="loginEmail" type="email" placeholder="E-Mail" autocomplete="email" style="padding:14px 14px;font-size:15px;border-radius:10px">
-      <input class="admin-input" id="loginPass" type="password" placeholder="Passwort" autocomplete="current-password" style="padding:14px 14px;font-size:15px;border-radius:10px">
+    <div style="padding:28px 24px 16px">
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Anmelden</div>
+      <p style="font-size:13px;color:var(--text2);margin:0 0 20px">Nur für YEARS-Mitarbeiter mit @years.co Google Account.</p>
       <div id="loginError" style="display:none;color:var(--red);font-size:13px;margin-bottom:8px"></div>
     </div>
-    <div style="padding:0 24px 12px">
-      <button class="admin-btn primary" style="width:100%;padding:14px;font-size:15px;font-weight:700;border-radius:10px" onclick="doLogin()">Anmelden</button>
-    </div>
-    <div style="padding:0 24px 12px">
-      <div style="display:flex;align-items:center;gap:12px;margin:4px 0 10px"><div style="flex:1;height:1px;background:var(--border)"></div><span style="font-size:12px;color:var(--text2)">oder</span><div style="flex:1;height:1px;background:var(--border)"></div></div>
-      <button onclick="doGoogleLogin()" style="width:100%;padding:12px 16px;font-size:15px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;color:var(--text);transition:all .15s">
+    <div style="padding:0 24px 28px">
+      <button onclick="doGoogleLogin()" style="width:100%;padding:14px 16px;font-size:15px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;color:var(--text);transition:all .15s">
         <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-        Mit Google einloggen
+        Mit YEARS Google Account einloggen
       </button>
-    </div>
-    <div style="text-align:center;padding:10px 24px 6px">
-      <button style="background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;text-decoration:underline" onclick="showResetPassword()">Passwort vergessen?</button>
-    </div>
-    <div style="text-align:center;padding:4px 24px 28px">
-      <button style="background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;text-decoration:underline" onclick="skipLogin()">Demo-Modus (ohne Login)</button>
     </div>
   </div>
 </div>
@@ -909,7 +898,7 @@ function saveSupaConfig(cfg){localStorage.setItem(SUPA_CONFIG_KEY,JSON.stringify
 
 async function initSupabase(){
   const cfg=loadSupaConfig();
-  if(!cfg||!cfg.url||!cfg.anonKey){backendMode='local';return false}
+  if(!cfg||!cfg.url||!cfg.anonKey){document.getElementById('loginOverlay').classList.add('open');return false}
   try{
     supaClient=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{detectSessionFromUrl:true,flowType:'implicit'}});
     // Handle OAuth/email confirmation callback (tokens in URL hash)
@@ -929,69 +918,37 @@ async function initSupabase(){
           toast('Willkommen, '+(cbSession.user.user_metadata?.full_name||cbSession.user.email)+'!');
           return true;
         }
-        // Email login callback
+        // Email callback — auch hier Domain-Check
+        const cbDomain=(cbSession.user.email||'').split('@')[1];
+        if(cbDomain!=='years.co'){
+          toast('Nur @years.co Accounts sind erlaubt');
+          await supaClient.auth.signOut();
+          document.getElementById('loginOverlay').classList.add('open');
+          return false;
+        }
         supaClient.from('profiles').update({status:'active'}).eq('id',cbSession.user.id).then(()=>{});
-        const isReset=hash.includes('type=recovery');
-        // Password reset or first login — prompt to set password
-        setTimeout(async()=>{
-          const title=isReset?'Neues Passwort festlegen':'Willkommen! Passwort festlegen';
-          const desc=isReset?'Bitte lege jetzt ein neues Passwort fest.':'Dein Account wurde bestätigt. Bitte lege jetzt ein Passwort fest, mit dem du dich künftig anmelden kannst.';
-          const pw=await showModal(title,`<p style="font-size:13px;color:var(--text2);margin-bottom:12px">${desc}</p><input class="admin-input" id="modalSetPw" type="password" placeholder="Neues Passwort (min. 6 Zeichen)" style="margin-bottom:8px"><input class="admin-input" id="modalSetPw2" type="password" placeholder="Passwort wiederholen">`,[{label:'Später',cls:'modal-btn-cancel',val:'skip'},{label:'Speichern',cls:'modal-btn-confirm',val:'_pw'}]);
-          if(pw&&pw!=='skip'&&pw.length>=6){
-            const{error}=await supaClient.auth.updateUser({password:pw});
-            if(error){toast('Fehler: '+error.message)}else{toast(isReset?'Neues Passwort gespeichert!':'Passwort gespeichert!')}
-          }else if(pw&&pw!=='skip'){toast('Passwort muss mindestens 6 Zeichen haben')}
-        },500);
         return true;
       }
     }
     const{data:{session}}=await supaClient.auth.getSession();
-    if(session){supaUser=session.user;backendMode='supabase';return true}
-    // No session — show login
-    backendMode='local';
+    if(session){
+      // Domain-Check auch für bestehende Sessions
+      const sDomain=(session.user.email||'').split('@')[1];
+      if(sDomain!=='years.co'){
+        toast('Nur @years.co Accounts sind erlaubt');
+        await supaClient.auth.signOut();
+        document.getElementById('loginOverlay').classList.add('open');
+        return false;
+      }
+      supaUser=session.user;backendMode='supabase';return true
+    }
+    // No session — show login (Google only)
     document.getElementById('loginOverlay').classList.add('open');
     return false
-  }catch(e){console.warn('Supabase init failed:',e);backendMode='local';return false}
+  }catch(e){console.warn('Supabase init failed:',e);document.getElementById('loginOverlay').classList.add('open');return false}
 }
 
-async function doLogin(){
-  const email=document.getElementById('loginEmail').value.trim();
-  const pass=document.getElementById('loginPass').value;
-  const errEl=document.getElementById('loginError');
-  errEl.style.display='none';
-  if(!email||!pass){errEl.textContent='Bitte E-Mail und Passwort eingeben.';errEl.style.display='';return}
-  if(!supaClient){errEl.textContent='Kein Backend konfiguriert. Bitte erst in den Einstellungen konfigurieren.';errEl.style.display='';return}
-  try{
-    const{data,error}=await supaClient.auth.signInWithPassword({email,password:pass});
-    if(error){
-      if(error.message.includes('Database error')){errEl.textContent='Datenbankfehler — bitte in 30 Sekunden erneut versuchen.';errEl.style.display='';return}
-      errEl.textContent=error.message==='Invalid login credentials'?'Falsche E-Mail oder Passwort.':error.message;errEl.style.display='';return
-    }
-    supaUser=data.user;
-    backendMode='supabase';
-    document.getElementById('loginOverlay').classList.remove('open');
-    supaClient.from('profiles').update({status:'active'}).eq('id',data.user.id).then(()=>{});
-    try{await loadDataFromSupabase()}catch(loadErr){console.warn('Data load after login failed:',loadErr)}
-    renderAll();
-    toast('Angemeldet als '+email);
-    setupRealtimeSync();
-    startConfigPolling();
-  }catch(e){errEl.textContent='Verbindungsfehler: '+e.message;errEl.style.display=''}
-}
-
-async function showResetPassword(){
-  const email=document.getElementById('loginEmail').value.trim();
-  const errEl=document.getElementById('loginError');
-  if(!email){errEl.textContent='Bitte zuerst deine E-Mail oben eingeben.';errEl.style.display='';return}
-  if(!supaClient){errEl.textContent='Kein Backend konfiguriert.';errEl.style.display='';return}
-  errEl.style.display='none';
-  try{
-    const redirectUrl=window.location.origin+window.location.pathname;
-    const{error}=await supaClient.auth.resetPasswordForEmail(email,{redirectTo:redirectUrl});
-    if(error){errEl.textContent='Fehler: '+error.message;errEl.style.display='';return}
-    await showModal('E-Mail gesendet',`<p style="font-size:14px;color:var(--text2)">Eine E-Mail zum Zurücksetzen des Passworts wurde an <strong>${email}</strong> gesendet. Bitte prüfe dein Postfach und klicke auf den Link.</p>`,[{label:'OK',cls:'modal-btn-confirm',val:'ok'}]);
-  }catch(e){errEl.textContent='Fehler: '+e.message;errEl.style.display=''}
-}
+// doLogin und showResetPassword entfernt — nur Google @years.co Login
 
 async function doGoogleLogin(){
   const errEl=document.getElementById('loginError');
@@ -1044,15 +1001,7 @@ async function handleOAuthUser(user){
   return true;
 }
 
-function skipLogin(){
-  document.getElementById('loginOverlay').classList.remove('open');
-  backendMode='local';
-  loadData();
-  purgeNonAirtablePatients();
-  migrateTxStatuses();
-  bootComplete=true;
-  renderAll();
-}
+// skipLogin entfernt — nur @years.co Google Login erlaubt
 
 async function doLogout(){
   if(supaClient){await supaClient.auth.signOut()}
@@ -3121,25 +3070,28 @@ function updateThemeIcon(){const el=document.getElementById('hdrIcoTheme');if(el
   const localSavedAt=JSON.parse(localStorage.getItem('years_tracking')||'{}').savedAt||0;
   // Then try Supabase
   const supaOk=await initSupabase();
-  if(supaOk){
-    await loadDataFromSupabase();
-    purgeNonAirtablePatients();
-    // Merge: if localStorage has patient moves that Supabase doesn't, keep them
-    localPatients.forEach(lp=>{
-      if(!lp.airtableRecordId&&!lp.id.startsWith('at-'))return;
-      const sp=patients.find(p=>p.id===lp.id);
-      if(sp&&lp.currentLocation&&!sp.currentLocation){
-        sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince;sp.status=lp.status;sp.journey=lp.journey;sp.lastMovedBy=lp.lastMovedBy||'';
-      }else if(sp&&lp.currentLocation&&sp.currentLocation&&lp.currentLocation!==sp.currentLocation&&localSavedAt>Date.now()-60000){
-        sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince;sp.status=lp.status;sp.journey=lp.journey;sp.lastMovedBy=lp.lastMovedBy||'';
-      }
-      // Preserve local journey/done state if richer than Supabase
-      if(sp&&(lp.journey||[]).length>(sp.journey||[]).length){sp.journey=lp.journey}
-      if(sp&&lp.doneAt&&!sp.doneAt){sp.doneAt=lp.doneAt;sp.status=lp.status;sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince}
-    });
-    setupRealtimeSync();
-    startConfigPolling();
+  if(!supaOk){
+    // Nicht eingeloggt — App bleibt gesperrt, nur Login-Overlay sichtbar
+    // Warte auf Google OAuth Redirect, dann reload
+    return;
   }
+  await loadDataFromSupabase();
+  purgeNonAirtablePatients();
+  // Merge: if localStorage has patient moves that Supabase doesn't, keep them
+  localPatients.forEach(lp=>{
+    if(!lp.airtableRecordId&&!lp.id.startsWith('at-'))return;
+    const sp=patients.find(p=>p.id===lp.id);
+    if(sp&&lp.currentLocation&&!sp.currentLocation){
+      sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince;sp.status=lp.status;sp.journey=lp.journey;sp.lastMovedBy=lp.lastMovedBy||'';
+    }else if(sp&&lp.currentLocation&&sp.currentLocation&&lp.currentLocation!==sp.currentLocation&&localSavedAt>Date.now()-60000){
+      sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince;sp.status=lp.status;sp.journey=lp.journey;sp.lastMovedBy=lp.lastMovedBy||'';
+    }
+    // Preserve local journey/done state if richer than Supabase
+    if(sp&&(lp.journey||[]).length>(sp.journey||[]).length){sp.journey=lp.journey}
+    if(sp&&lp.doneAt&&!sp.doneAt){sp.doneAt=lp.doneAt;sp.status=lp.status;sp.currentLocation=lp.currentLocation;sp.locationSince=lp.locationSince}
+  });
+  setupRealtimeSync();
+  startConfigPolling();
   // Airtable sync runs independently (works with and without Supabase)
   await fetchAirtablePatients();
   startAirtableSync();
@@ -3148,7 +3100,6 @@ function updateThemeIcon(){const el=document.getElementById('hdrIcoTheme');if(el
   document.querySelectorAll('.view').forEach(v=>v.style.visibility='');
   renderAll();
   checkURLForRoom();
-  if(!supaOk)resetScanView();
 })();
 </script>
 </body>
