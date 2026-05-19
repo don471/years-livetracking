@@ -896,6 +896,13 @@ const SUPA_CONFIG_KEY='years_supabase_config';
 function loadSupaConfig(){try{const s=localStorage.getItem(SUPA_CONFIG_KEY);if(s)return JSON.parse(s);return{url:'https://kghyycbzgovewhnphbzl.supabase.co',anonKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnaHl5Y2J6Z292ZXdobnBoYnpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MTgzMTcsImV4cCI6MjA5MTM5NDMxN30.yWS7vGOawYWQFLp_sAhY8TaJuQPqihSNtFwQ32iYkmo'}}catch(e){return null}}
 function saveSupaConfig(cfg){localStorage.setItem(SUPA_CONFIG_KEY,JSON.stringify(cfg))}
 
+// Einmal-Force-Logout: alle bestehenden Sessions invalidieren (Sicherheitsupdate 2025-05-19)
+const AUTH_VERSION='2';
+if(localStorage.getItem('years_auth_version')!==AUTH_VERSION){
+  localStorage.removeItem('sb-kghyycbzgovewhnphbzl-auth-token');
+  localStorage.setItem('years_auth_version',AUTH_VERSION);
+}
+
 async function initSupabase(){
   const cfg=loadSupaConfig();
   if(!cfg||!cfg.url||!cfg.anonKey){document.getElementById('loginOverlay').classList.add('open');return false}
