@@ -268,6 +268,7 @@ body.panel-open{overflow:hidden}
 .pm-pend-badge{font-size:10px;font-weight:700;background:var(--orange);color:#fff;border-radius:8px;padding:1px 6px;margin-left:2px}
 @keyframes pendPulse{0%,100%{opacity:1}50%{opacity:.7}}
 .pat-mini.pm-waiting{background:var(--yellow-bg);border-color:var(--yellow)}
+.pat-mini.pm-checkedin{background:var(--green-bg);border-color:var(--green);border-style:solid}
 .pat-mini.pm-active{background:var(--warm-100);border-color:var(--warm-300)}
 .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:stretch}
 @media(max-width:1100px){.dash-grid{grid-template-columns:repeat(3,1fr)}}
@@ -1908,7 +1909,7 @@ function renderPatients(){const q=(document.getElementById('patSearchInput').val
 // ═══════════════════════════════════════
 // PATIENT SHEET (tabbed, editable)
 // ═══════════════════════════════════════
-function openPatientSheet(pid){const p=patients.find(x=>x.id===pid);if(!p)return;pendingEdits={};document.getElementById('sheetTitle').textContent=patName(p);let h='';const s=pStatus(p);let sb='';if(s==='in-room')sb=`<span class="badge b-room">${locName(p.currentLocation)}</span>`;else if(s==='pause')sb=`<span class="badge b-pause">${locName(p.currentLocation)}</span>`;else if(s==='waiting')sb='<span class="badge b-wait">Wartend</span>';else if(s==='done')sb='<span class="badge b-done">Fertig</span>';else sb='<span class="badge b-new">Nicht da</span>';
+function openPatientSheet(pid){const p=patients.find(x=>x.id===pid);if(!p)return;pendingEdits={};document.getElementById('sheetTitle').textContent=patName(p);let h='';const s=pStatus(p);let sb='';if(s==='in-room')sb=`<span class="badge b-room">${locName(p.currentLocation)}</span>`;else if(s==='pause')sb=`<span class="badge b-pause">${locName(p.currentLocation)}</span>`;else if(s==='waiting'&&!p.currentLocation)sb='<span class="badge b-wait" style="background:var(--green-bg);color:var(--green);border-color:var(--green)">Eingecheckt</span>';else if(s==='waiting')sb='<span class="badge b-wait">Wartend</span>';else if(s==='done')sb='<span class="badge b-done">Fertig</span>';else sb='<span class="badge b-new">Nicht da</span>';
 h+=`<div style="padding:2px 20px 6px;display:flex;align-items:center;gap:8px"><span class="tag">#${p.id}</span>${sb}${p.locationSince?`<span style="font-size:12px;color:var(--text2)">${fmtDur(p.locationSince)}</span>`:''}</div>`;
 if(s==='not-arrived')h+=`<div style="padding:4px 20px 8px"><button class="admin-btn primary" style="width:100%;padding:14px;font-size:15px" onclick="checkInPatient('${pid}')">${ico('checkCircle','ico-sm')} Patient ist angekommen — Einchecken</button></div>`;
 h+=`<div class="sheet-tabs"><button class="sheet-tab ${sheetActiveTab==='raum'?'active':''}" onclick="switchSheetTab('raum','${pid}')">Raum</button><button class="sheet-tab ${sheetActiveTab==='behandlungen'?'active':''}" onclick="switchSheetTab('behandlungen','${pid}')">Behandlungen</button>${isModuleEnabled('doku')?`<button class="sheet-tab ${sheetActiveTab==='doku'?'active':''}" onclick="switchSheetTab('doku','${pid}')">${ico('fileText','ico-sm')} Doku</button>`:''}<button class="sheet-tab ${sheetActiveTab==='patient'?'active':''}" onclick="switchSheetTab('patient','${pid}')">Patient</button>${isModuleEnabled('labor')?`<button class="sheet-tab ${sheetActiveTab==='labor'?'active':''}" onclick="switchSheetTab('labor','${pid}')">${ico('flask','ico-sm')} Labor</button>`:''}<button class="sheet-tab ${sheetActiveTab==='verweildauer'?'active':''}" onclick="switchSheetTab('verweildauer','${pid}')">Verweildauer</button><button class="sheet-tab ${sheetActiveTab==='verlauf'?'active':''}" onclick="switchSheetTab('verlauf','${pid}')">Verlauf</button>${isModuleEnabled('chat')&&modules.chat.patientChat?`<button class="sheet-tab ${sheetActiveTab==='chat'?'active':''}" onclick="switchSheetTab('chat','${pid}')">${ico('messageSquare','ico-sm')} Chat</button>`:''}</div>`;
@@ -1972,7 +1973,7 @@ h+=`</div><div class="field-save-bar" id="fieldSaveBar"><button class="admin-btn
 // TAB: VERWEILDAUER
 h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verweildauer'?'active':''}">${buildVerweildauer(p)}</div>`;
 // TAB: VERLAUF
-h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verlauf'?'active':''}">`;if(!p.journey)p.journey=[];if(p.journey.length||p.currentLocation){h+=`<div class="journey"><div class="journey-title">Heutiger Verlauf</div><div class="jtl">`;p.journey.forEach(st=>{if(st.type==='track-change'){const fromT=tracks.find(t=>t.id===st.from);const toT=tracks.find(t=>t.id===st.to);const fromL=fromT?fromT.name:'Kein Track';const toL=toT?toT.name:'—';const fromDot=fromT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fromT.color};margin-right:2px"></span>`:'';const toDot=toT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${toT.color};margin-right:2px"></span>`:'';h+=`<div class="jstep" style="background:var(--warm-100);border-left:3px solid ${toT?toT.color:'var(--border)'}"><span class="jstep-room" style="font-size:12px">${fromDot}${fromL} → ${toDot}${toL}</span><div class="jstep-time">${fmtClock(st.at)} · Track gewechselt</div></div>`}else{const byUser=st.movedBy?` · ${st.movedBy}`:'';const ov=st.orderViolation;h+=`<div class="jstep"${ov?' style="border-left:3px solid var(--orange);background:var(--orange-bg)"':''}>`;h+=`<span class="jstep-room">${locName(st.loc)}</span>`;if(ov){h+=`<div style="font-size:11px;font-weight:700;color:var(--orange);margin:2px 0">⚠ Reihenfolge übersprungen — erwartet: Station ${ov.expectedNum||'?'} ${ov.expectedName||''}</div><div style="font-size:11px;color:var(--orange);opacity:.8">Bestätigt von: ${ov.confirmedBy||'Unbekannt'}</div>`}h+=`<div class="jstep-time">${fmtClock(st.enter)} – ${fmtClock(st.exit)} · ${fmtDurMM(st.enter,st.exit)}${byUser}</div></div>`}});if(p.currentLocation){const tc=timeColor(p.currentLocation,p.locationSince);const tcCls=tc==='red'?'jstep-red':tc==='orange'?'jstep-orange':'now';const curBy=p.lastMovedBy?` · ${p.lastMovedBy}`:'';h+=`<div class="jstep ${tcCls}"><span class="jstep-room">${locName(p.currentLocation)}</span><div class="jstep-time">seit ${fmtClock(p.locationSince)} · ${fmtDur(p.locationSince)}${curBy}</div></div>`};h+='</div></div>'}else h+=`<div class="empty" style="padding:24px"><div class="empty-icon">${ico('clock','ico-xl')}</div><div class="empty-text">Noch kein Verlauf</div></div>`;h+='</div>';
+h+=`<div class="sheet-tab-panel ${sheetActiveTab==='verlauf'?'active':''}">`;if(!p.journey)p.journey=[];const hasVerlauf=p.journey.length||p.currentLocation||pStatus(p)==='waiting';if(hasVerlauf){h+=`<div class="journey"><div class="journey-title">Heutiger Verlauf</div><div class="jtl">`;p.journey.forEach(st=>{if(st.type==='checkin'){const byUser=st.movedBy?` · ${st.movedBy}`:'';h+=`<div class="jstep" style="border-left:3px solid var(--green);background:var(--green-bg)"><span class="jstep-room" style="color:var(--green)">Eingecheckt</span><div class="jstep-time">${fmtClock(st.at)}${byUser}</div></div>`}else if(st.type==='track-change'){const fromT=tracks.find(t=>t.id===st.from);const toT=tracks.find(t=>t.id===st.to);const fromL=fromT?fromT.name:'Kein Track';const toL=toT?toT.name:'—';const fromDot=fromT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${fromT.color};margin-right:2px"></span>`:'';const toDot=toT?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${toT.color};margin-right:2px"></span>`:'';h+=`<div class="jstep" style="background:var(--warm-100);border-left:3px solid ${toT?toT.color:'var(--border)'}"><span class="jstep-room" style="font-size:12px">${fromDot}${fromL} → ${toDot}${toL}</span><div class="jstep-time">${fmtClock(st.at)} · Track gewechselt</div></div>`}else{const byUser=st.movedBy?` · ${st.movedBy}`:'';const ov=st.orderViolation;h+=`<div class="jstep"${ov?' style="border-left:3px solid var(--orange);background:var(--orange-bg)"':''}>`;h+=`<span class="jstep-room">${locName(st.loc)}</span>`;if(ov){h+=`<div style="font-size:11px;font-weight:700;color:var(--orange);margin:2px 0">⚠ Reihenfolge übersprungen — erwartet: Station ${ov.expectedNum||'?'} ${ov.expectedName||''}</div><div style="font-size:11px;color:var(--orange);opacity:.8">Bestätigt von: ${ov.confirmedBy||'Unbekannt'}</div>`}h+=`<div class="jstep-time">${fmtClock(st.enter)} – ${fmtClock(st.exit)} · ${fmtDurMM(st.enter,st.exit)}${byUser}</div></div>`}});if(p.currentLocation){const tc=timeColor(p.currentLocation,p.locationSince);const tcCls=tc==='red'?'jstep-red':tc==='orange'?'jstep-orange':'now';const curBy=p.lastMovedBy?` · ${p.lastMovedBy}`:'';h+=`<div class="jstep ${tcCls}"><span class="jstep-room">${locName(p.currentLocation)}</span><div class="jstep-time">seit ${fmtClock(p.locationSince)} · ${fmtDur(p.locationSince)}${curBy}</div></div>`}else if(pStatus(p)==='waiting'&&!p.currentLocation){const waitBy=p.lastMovedBy?` · ${p.lastMovedBy}`:'';h+=`<div class="jstep now" style="border-left:3px solid var(--yellow)"><span class="jstep-room">Wartet auf Raumzuweisung</span><div class="jstep-time">seit ${fmtClock(p.checkedInAt||p.journey.find(j=>j.type==='checkin')?.at)} · ${fmtDur(p.checkedInAt||p.journey.find(j=>j.type==='checkin')?.at)}${waitBy}</div></div>`};h+='</div></div>'}else h+=`<div class="empty" style="padding:24px"><div class="empty-icon">${ico('clock','ico-xl')}</div><div class="empty-text">Noch kein Verlauf</div></div>`;h+='</div>';
 // TAB: DOKU (module)
 if(isModuleEnabled('doku')){
   h+=`<div class="sheet-tab-panel ${sheetActiveTab==='doku'?'active':''}"><div style="padding:12px 20px">`;
@@ -2040,7 +2041,9 @@ async function checkInPatient(pid){const p=patients.find(x=>x.id===pid);if(!p)re
     p.journey.push({type:'track-change',from:null,to:chosen,at:Date.now()});
     p.track=chosen;
   }
-  p.status='waiting';p.currentLocation='wartebereich';p.locationSince=Date.now();saveData();renderDashboard();
+  p.status='waiting';p.currentLocation=null;p.locationSince=null;p.checkedInAt=Date.now();
+  p.journey.push({type:'checkin',at:Date.now(),movedBy:getCurrentUserName()||undefined});
+  saveData();if(backendMode==='supabase')await savePatientToSupabase(p);renderDashboard();
   // Show success + room assignment inline in sheet
   showCheckInSuccess(p);
 }
@@ -2251,10 +2254,11 @@ if(unassignedPats.length){
   h+=`<div class="pat-chip-bar" data-drop-zone="checkin" ondragover="event.preventDefault();this.style.background='var(--green-bg)'" ondragleave="this.style.background=''" ondrop="chipBarDrop(event);this.style.background=''"><span class="pat-chip-bar-label" style="color:var(--orange)">⚠ Ohne Track</span>`;
   unassignedPats.forEach(p=>{
     const s=pStatus(p);
+    const chipCls=(s==='waiting'&&!p.currentLocation)?'pm-checkedin':'pm-unassigned';
     const zeit=fmtStartzeit(p.startzeit);
     const loc=p.currentLocation?locName(p.currentLocation):'';
-    const sub=s==='not-arrived'?zeit:(loc||zeit);
-    h+=`<div class="pat-mini pm-unassigned" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')"><span>${patShort(p)}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
+    const sub=(s==='waiting'&&!p.currentLocation)?'Eingecheckt':(s==='not-arrived'?zeit:(loc||zeit));
+    h+=`<div class="pat-mini ${chipCls}" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')"><span>${patShort(p)}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
   });
   h+=`</div>`;
 }
@@ -2282,12 +2286,15 @@ if(chipPatients.length||donePats.length){
       const trkDot=trk?`<span class="pm-dot" style="background:${trk.color}"></span>`:'';
       let cls='pat-mini';
       const _hasRoom=p.currentLocation&&ALL_LOCS.find(x=>x.id===p.currentLocation);
-      if(s==='not-arrived'||!_hasRoom)cls+=' pm-unassigned';
+      if(s==='not-arrived')cls+=' pm-unassigned';
+      else if(s==='waiting'&&!_hasRoom)cls+=' pm-checkedin';
       else if(s==='waiting')cls+=' pm-waiting';
-      else cls+=' pm-active';
+      else if(_hasRoom)cls+=' pm-active';
+      else cls+=' pm-unassigned';
       const zeit=fmtStartzeit(p.startzeit);
       const loc=_hasRoom?_hasRoom.name:'';
-      const sub=(!_hasRoom)?zeit:(loc||zeit);
+      const checkedInLabel=(s==='waiting'&&!_hasRoom)?'Eingecheckt':'';
+      const sub=checkedInLabel||((!_hasRoom)?zeit:(loc||zeit));
       h+=`<div class="${cls}" draggable="true" data-pid="${p.id}" ondragstart="dashDragStart(event,'${p.id}')" ondragend="dashDragEnd(event)" ontouchstart="chipTouchStart(event,'${p.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" onclick="openPatientSheet('${p.id}')">${trkDot}<span>${patShort(p)}</span>${sub?`<span class="pm-time">${sub}</span>`:''}</div>`;
     });
   }
@@ -2360,7 +2367,7 @@ async function dashDrop(e,locId){e.preventDefault();document.querySelectorAll('.
     const action=s==='not-arrived'?'einchecken und':'';
     const r2=await showModal('Patient zuweisen?',`<p><strong>${patName(p)}</strong> ${action} in <strong>${locName(locId)}</strong> zuweisen?</p>`,[{label:'Abbrechen',cls:'modal-btn-cancel',val:'no'},{label:'Zuweisen',cls:'modal-btn-confirm',val:'yes'}]);
     if(r2!=='yes')return;
-    if(s==='not-arrived'){if(!p.journey)p.journey=[];if(!p.track&&tracks.length){p.track=tracks[0].id;p.journey.push({type:'track-change',from:null,to:p.track,at:Date.now()})}p.status='waiting';p.currentLocation='wartebereich';p.locationSince=Date.now();saveData()}
+    if(s==='not-arrived'){if(!p.journey)p.journey=[];if(!p.track&&tracks.length){p.track=tracks[0].id;p.journey.push({type:'track-change',from:null,to:p.track,at:Date.now()})}p.status='waiting';p.currentLocation=null;p.locationSince=null;p.checkedInAt=Date.now();p.journey.push({type:'checkin',at:Date.now(),movedBy:getCurrentUserName()||undefined});saveData()}
   }
   await transitionPatient(pid,locId)}
 let touchDragTimer=null,touchStartX=0,touchStartY=0,touchDragActive=false,touchSrcEl=null,autoScrollRAF=null;
