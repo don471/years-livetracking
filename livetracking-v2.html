@@ -2243,10 +2243,11 @@ function setTrackFilter(tid){activeTrackFilter=tid;renderDashboard()}
 function renderDashboard(){
 let h='';
 // Track filter chips
-h+=`<div class="dash-track-bar"><button class="track-chip ${activeTrackFilter==='all'?'on':''}" onclick="setTrackFilter('all')">Alle</button>`;
+const allActiveCnt=patients.filter(p=>p.currentLocation&&pStatus(p)!=='done'&&pStatus(p)!=='no-show'&&pStatus(p)!=='not-arrived').length;
+h+=`<div class="dash-track-bar"><button class="track-chip ${activeTrackFilter==='all'?'on':''}" onclick="setTrackFilter('all')">Alle${allActiveCnt?`<span style="font-size:11px;font-weight:400;color:${activeTrackFilter==='all'?'var(--warm-400)':'var(--text2)'}">${allActiveCnt}</span>`:''}</button>`;
 tracks.forEach(t=>{
-  const cnt=patients.filter(p=>p.track===t.id).length;
-  h+=`<button class="track-chip ${activeTrackFilter===t.id?'on':''}" onclick="setTrackFilter('${t.id}')"><span class="track-dot" style="background:${t.color}"></span>${t.name}<span style="font-size:11px;font-weight:400;color:${activeTrackFilter===t.id?'var(--warm-400)':'var(--text2)'}">${cnt}</span></button>`;
+  const cnt=patients.filter(p=>p.track===t.id&&p.currentLocation&&pStatus(p)!=='done'&&pStatus(p)!=='no-show'&&pStatus(p)!=='not-arrived').length;
+  h+=`<button class="track-chip ${activeTrackFilter===t.id?'on':''}" onclick="setTrackFilter('${t.id}')"><span class="track-dot" style="background:${t.color}"></span>${t.name}${cnt?`<span style="font-size:11px;font-weight:400;color:${activeTrackFilter===t.id?'var(--warm-400)':'var(--text2)'}">${cnt}</span>`:''}</button>`;
 });
 h+=`</div>`;
 
