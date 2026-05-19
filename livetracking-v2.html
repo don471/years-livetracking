@@ -966,7 +966,7 @@ async function doGoogleLogin(){
       provider:'google',
       options:{
         redirectTo:window.location.origin+window.location.pathname,
-        queryParams:{hd:'years.co'}  // Hint: nur @years.co Accounts im Google-Picker anzeigen
+        queryParams:{hd:'years.co',prompt:'select_account'}  // Account-Picker immer anzeigen + @years.co Hint
       }
     });
     if(error){errEl.textContent='Google Login fehlgeschlagen: '+error.message;errEl.style.display=''}
