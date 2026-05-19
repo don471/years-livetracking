@@ -1006,9 +1006,8 @@ async function handleOAuthUser(user){
 async function doLogout(){
   if(supaClient){await supaClient.auth.signOut()}
   supaUser=null;
-  backendMode='local';
-  renderAll();
-  toast('Abgemeldet — Demo-Modus aktiv');
+  // Nach Abmelden: Seite neu laden → Login-Screen
+  location.reload();
 }
 
 // ── Supabase Data Operations ──
@@ -2671,13 +2670,13 @@ if(adminActiveTab==='backend'){
   const isConnected=backendMode==='supabase';
   const userEmail=supaUser?supaUser.email:'—';
   const userRole=getUserRole();
-  h+=`<div class="acc open"><div class="acc-hdr"><div class="acc-hdr-left">${ico('wifi','ico-sm')} Verbindungsstatus</div><span class="backend-status ${isConnected?'online':'offline'}">${isConnected?'● Online':'○ Demo-Modus'}</span></div><div class="acc-body" style="max-height:3000px"><div class="acc-inner">`;
+  h+=`<div class="acc open"><div class="acc-hdr"><div class="acc-hdr-left">${ico('wifi','ico-sm')} Verbindungsstatus</div><span class="backend-status ${isConnected?'online':'offline'}">${isConnected?'● Online':'○ Offline'}</span></div><div class="acc-body" style="max-height:3000px"><div class="acc-inner">`;
   if(isConnected){
     h+=`<div class="admin-card"><div class="admin-card-info"><div class="admin-card-icon">${ico('check','ico-sm')}</div><div><div class="admin-card-name">Verbunden mit Supabase</div><div class="admin-card-id">${cfg.url||''}</div></div></div></div>`;
     const userName=supaUser?.user_metadata?.full_name||supaUser?.user_metadata?.name||teamMembers.find(m=>m.email===userEmail)?.name||userEmail.split('@')[0];
     h+=`<div class="admin-card" style="flex-direction:column;align-items:stretch;gap:10px"><div style="display:flex;align-items:center;gap:10px"><div class="admin-card-icon">${ico('users','ico-sm')}</div><div style="flex:1;min-width:0"><div class="admin-card-name">${userName}</div><div class="admin-card-id">${userEmail} · Rolle: ${userRole}</div></div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="admin-btn" onclick="changeDisplayName()" style="padding:8px 14px">Name ändern</button><button class="admin-btn" onclick="changePassword()" style="padding:8px 14px">Passwort ändern</button><button class="admin-btn danger" onclick="doLogout()">Abmelden</button></div></div>`;
   }else{
-    h+=`<div class="admin-hint">Im Demo-Modus werden alle Daten nur lokal im Browser gespeichert. Für Mehrbenutzerbetrieb und Echtzeit-Sync bitte Supabase konfigurieren.</div>`;
+    h+=`<div class="admin-hint">Nicht angemeldet. Bitte mit @years.co Google Account einloggen.</div>`;
   }
   h+=`</div></div></div>`;
   h+=`<div class="acc${!isConnected?' open':''}"><div class="acc-hdr" onclick="this.parentElement.classList.toggle('open')"><div class="acc-hdr-left">${ico('settings','ico-sm')} Supabase Konfiguration</div><div class="acc-arrow">${ico('chevDown','ico-sm')}</div></div><div class="acc-body"><div class="acc-inner">`;
@@ -2839,9 +2838,9 @@ function clearBackendConfig(){
   localStorage.removeItem(SUPA_CONFIG_KEY);
   if(supaClient&&realtimeChannel)supaClient.removeChannel(realtimeChannel);
   if(configPollTimer)clearInterval(configPollTimer);configPollTimer=null;
-  supaClient=null;supaUser=null;backendMode='local';realtimeChannel=null;
-  toast('Backend-Verbindung getrennt — Demo-Modus aktiv');
-  renderAdmin()
+  supaClient=null;supaUser=null;realtimeChannel=null;
+  // Nach Backend-Trennung: Login erforderlich
+  location.reload();
 }
 // Airtable admin functions
 function saveAirtableConfig(){
